@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+import requests
 from botocore.exceptions import NoCredentialsError
 import os
 import boto3

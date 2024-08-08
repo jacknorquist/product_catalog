@@ -1,4 +1,9 @@
-from models import Session, Product, Color, Texture, ProductImage
+import sys
+import os
+
+# Add the root directory of your project to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
+from db.models import Session, Product, Color, Texture, ProductImage
 
 
 def insert_product(product_details):

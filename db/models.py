@@ -45,7 +45,7 @@ class ProductImage(Base):
     product = relationship('Product', back_populates='images')
 
 
-DATABASE_URL=os.getenv('DATABASE_URL'),
+DATABASE_URL=os.getenv('DATABASE_URL')
 
 
 # Create the engine

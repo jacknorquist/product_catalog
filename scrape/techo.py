@@ -5,7 +5,10 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from urllib.parse import urljoin
+import time
 import sys
 import os
 
@@ -37,45 +40,137 @@ def get_product_details(product_url):
     service = Service('./chromedriver')
     driver = webdriver.Chrome(service=service, options=chrome_options)
     driver.get(product_url)
-    html = driver.page_source
-    # response = requests.get(product_url)
-    soup = BeautifulSoup(html, 'html.parser');
-    base_url = 'https://www.techo-bloc.com'
 
+    # Use WebDriverWait to wait for the page to fully load
+    wait = WebDriverWait(driver, 10)
+    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.roc-pdp-title__product-name')))
+
+    # Get the initial page source
+    html = driver.page_source
+    soup = BeautifulSoup(html, 'html.parser')
+    base_url = 'https://www.techo-bloc.com'
 
     product_details = {}
     product_details['name'] = soup.select_one('.roc-pdp-title__product-name').text.strip()
     product_details['category'] = soup.select_one('.roc-pdp-title__product-category-text').text.strip()
 
+
+
+    # Use Selenium to interact with elements
     colors = []
-    color_list = soup.select('.roc-pdp-selections__colors-list')[0]  # First instance for colors
-    for color_item in color_list.select('.roc-pdp-selections__colors-item'):
-        color_name = color_item.select_one('.roc-pdp-selections__colors-name').text.strip()
-        color_image_url = color_item.select_one('.roc-pdp-selections__colors-asset')['src']
-        absolute_color_image_url = urljoin(base_url, color_image_url)
-        s3_color_image_url = upload_image_stream_to_s3(absolute_color_image_url, s3_bucket_name, f"colors/{color_name}.jpg")
-        colors.append({'name': color_name, 'image_url': s3_color_image_url})
+    print('here at colors')
+    # color_list = driver.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-list')  # First instance for colors
+    color_list = WebDriverWait(driver, 10).until(
+    EC.presence_of_all_elements_located((By.CSS_SELECTOR, '.roc-pdp-selections__colors-list'))
+    )
+    color_items = color_list[0].find_elements(By.CSS_SELECTOR, '.roc-pdp-selections__colors-item')
+
+    for color_item in color_items:
+        color_name = color_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-name').text.strip()
+        thumbnail_img = color_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-asset').get_attribute('src')
+        absolute_thumbnail_img_url = urljoin(base_url, thumbnail_img)
+
+        # Click the color label to show more images
+        try:
+            color_label = color_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-label')
+            print('in the try for colors')
+            if color_label:
+                wait.until(EC.element_to_be_clickable(color_label))
+                driver.execute_script("arguments[0].click();", color_label)
+                wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.roc-pdp-asset-scroller__item')))
+                time.sleep(1)  # Allow time for the images to load
+
+                # Collect main images
+                main_images = []
+                img_items = driver.find_elements(By.CSS_SELECTOR, '.roc-pdp-asset-scroller__button roc-pdp-asset-scroller__button--active')
+                for img_item in img_items:
+                    img_item.click()
+                    try:
+                        main_image_element = WebDriverWait(driver, 10).until(
+                            EC.visibility_of_element_located((By.CSS_SELECTOR, '.roc-pdp-main-image__image.roc-lazy-image--loaded'))
+                        )
+                        img_url = main_image_element.get_attribute('src')
+                        main_images.append(urljoin(base_url, img_url))
+                    except Exception as e:
+                        print(f"Error processing image item: {e}")
+
+                # Upload thumbnail and main images
+                s3_thumbnail_img_url = upload_image_stream_to_s3(absolute_thumbnail_img_url, s3_bucket_name, f"colors/{color_name}_thumbnail.jpg")
+                s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"colors/{color_name}_main_{i}.jpg") for i, img_url in enumerate(main_images)]
+
+                colors.append({
+                    'name': color_name,
+                    'thumbnail_image_url': s3_thumbnail_img_url,
+                    'main_images': s3_main_images
+                })
+            else:
+                print(f"Color label for {color_name} not found.")
+        except Exception as e:
+            print(f"Error processing color {color_name}: {e}")
 
     textures = []
-    texture_list = soup.select('.roc-pdp-selections__colors-list')[1]  # Second instance for textures
-    for texture_item in texture_list.select('.roc-pdp-selections__colors-item'):
-        texture_name = texture_item.select_one('.roc-pdp-selections__colors-name').text.strip()
-        texture_image_url = texture_item.select_one('.roc-pdp-selections__colors-asset')['src']
-        absolute_texture_image_url = urljoin(base_url, texture_image_url)
-        s3_texture_image_url = upload_image_stream_to_s3(absolute_texture_image_url, s3_bucket_name, f"textures/{texture_name}.jpg")
-        textures.append({'name': texture_name, 'image_url': s3_texture_image_url})
+    # texture_list = driver.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-list')  # Second instance for textures
+    texture_list = WebDriverWait(driver, 10).until(
+    EC.presence_of_all_elements_located((By.CSS_SELECTOR, '.roc-pdp-selections__colors-list'))
+    )
+    texture_items = texture_list[1].find_elements(By.CSS_SELECTOR, '.roc-pdp-selections__colors-item')
+
+    for texture_item in texture_items:
+        texture_name = texture_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-name').text.strip()
+        thumbnail_img = texture_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-asset').get_attribute('src')
+        absolute_thumbnail_img_url = urljoin(base_url, thumbnail_img)
+
+        # Click the texture label to show more images
+        try:
+            texture_label = texture_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-label')
+            if texture_label:
+                wait.until(EC.element_to_be_clickable(texture_label))
+                driver.execute_script("arguments[0].click();", texture_label)
+                wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.roc-pdp-asset-scroller__item')))
+                time.sleep(1)  # Allow time for the images to load
+
+                # Collect main images
+                main_images = []
+                img_items = driver.find_elements(By.CSS_SELECTOR, '.roc-pdp-asset-scroller__button roc-pdp-asset-scroller__button--active')
+                for img_item in img_items:
+                    img_item.click()
+                    try:
+                        main_image_element = WebDriverWait(driver, 10).until(
+                            EC.visibility_of_element_located((By.CSS_SELECTOR, '.roc-pdp-main-image__image.roc-lazy-image--loaded'))
+                        )
+                        img_url = main_image_element.get_attribute('src')
+                        main_images.append(urljoin(base_url, img_url))
+                    except Exception as e:
+                        print(f"Error processing image item: {e}")
+
+                # Upload thumbnail and main images
+                s3_thumbnail_img_url = upload_image_stream_to_s3(absolute_thumbnail_img_url, s3_bucket_name, f"textures/{texture_name}_thumbnail.jpg")
+                s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"textures/{texture_name}_main_{i}.jpg") for i, img_url in enumerate(main_images)]
+
+                textures.append({
+                    'name': texture_name,
+                    'thumbnail_image_url': s3_thumbnail_img_url,
+                    'main_images': s3_main_images
+                })
+            else:
+                print(f"Texture label for {texture_name} not found.")
+        except Exception as e:
+            print(f"Error processing texture {texture_name}: {e}")
 
     images = []
-    for img in soup.select('.roc-pdp-asset-scroller__image'):
-        img_url = img['src']
-        absolute_image_url = urljoin(base_url, img_url)
-        s3_image_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"products/{img_url.split('/')[-1]}")
-        images.append(s3_image_url)
+
+##dont need main images right now
+    # for img in driver.find_elements(By.CSS_SELECTOR, '.roc-pdp-asset-scroller__image'):
+    #     img_url = img.get_attribute('src')
+    #     absolute_image_url = urljoin(base_url, img_url)
+    #     s3_image_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"products/{img_url.split('/')[-1]}")
+    #     images.append(s3_image_url)
 
     product_details['colors'] = colors
     product_details['textures'] = textures
     product_details['images'] = images
 
+    driver.quit()
     return product_details
 
 def scrape_catalog(catalog_url = BASE_URL):

@@ -3,10 +3,11 @@ import os
 
 # Add the root directory of your project to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-from db.models import Session, Product, Color, Texture, ProductImage
+from db.models import Session, Product, Color, Texture, ProductImage, ColorImage, TextureImage
 
 
 def insert_product(product_details):
+    print(product_details, 'product detauls at insert product')
     # Create a new session
     session = Session()
 
@@ -25,18 +26,36 @@ def insert_product(product_details):
         color_entry = Color(
             product_id=product.id,
             name=color['name'],
-            image_url=color['image_url']
+            image_url=color['thumbnail_image_url']  # Thumbnail URL
         )
         session.add(color_entry)
+        session.commit()  # Commit to get the color ID
+
+        # Add Color Images
+        for color_image_url in color.get('main_images', []):
+            color_image_entry = ColorImage(
+                color_id=color_entry.id,
+                image_url=color_image_url
+            )
+            session.add(color_image_entry)
 
     # Add Textures
     for texture in product_details['textures']:
         texture_entry = Texture(
             product_id=product.id,
             name=texture['name'],
-            image_url=texture['image_url']
+            image_url=texture['thumbnail_image_url']  # Thumbnail URL
         )
         session.add(texture_entry)
+        session.commit()  # Commit to get the texture ID
+
+        # Add Texture Images
+        for texture_image_url in texture.get('main_images', []):
+            texture_image_entry = TextureImage(
+                texture_id=texture_entry.id,
+                image_url=texture_image_url
+            )
+            session.add(texture_image_entry)
 
     # Add Product Images
     for image_url in product_details['images']:

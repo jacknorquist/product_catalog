@@ -86,6 +86,7 @@ class TextureImage(Base):
 
 Index('ix_product_manufacturer_id', Product.manufacturer_id)
 
+
 # Retrieve the database URL from environment variables
 DATABASE_URL = os.getenv('DATABASE_URL')
 

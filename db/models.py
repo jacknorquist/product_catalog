@@ -70,6 +70,8 @@ class ColorImage(Base):
     image_url = Column(String, nullable=False)
     color = relationship('Color', back_populates='color_images')
 
+
+
 # Define the TextureImage model
 class TextureImage(Base):
     __tablename__ = 'texture_images'

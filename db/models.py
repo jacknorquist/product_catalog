@@ -72,6 +72,7 @@ class ColorImage(Base):
 
 
 
+
 # Define the TextureImage model
 class TextureImage(Base):
     __tablename__ = 'texture_images'

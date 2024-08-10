@@ -36,6 +36,7 @@ def get_product_links(catalog_url):
     return product_links
 
 def get_product_details(product_url):
+
     chrome_options = Options()
     service = Service('./chromedriver')
     driver = webdriver.Chrome(service=service, options=chrome_options)

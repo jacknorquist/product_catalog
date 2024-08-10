@@ -18,6 +18,7 @@ class Manufacturer(Base):
     products = relationship('Product', back_populates='manufacturer', cascade="all, delete-orphan")
 
 # Define the Product model
+
 class Product(Base):
     __tablename__ = 'products'
 

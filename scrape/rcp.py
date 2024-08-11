@@ -47,6 +47,7 @@ def get_product_details(product_url):
     ##this wont work for some.
     wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.title')))
 
+
     # Get the initial page source
     html = driver.page_source
     soup = BeautifulSoup(html, 'html.parser')

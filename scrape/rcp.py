@@ -44,7 +44,8 @@ def get_product_details(product_url):
 
     # Use WebDriverWait to wait for the page to fully load
     wait = WebDriverWait(driver, 10)
-    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.roc-pdp-title__product-name')))
+    ##this wont work for some.
+    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.title')))
 
     # Get the initial page source
     html = driver.page_source
@@ -52,7 +53,7 @@ def get_product_details(product_url):
     base_url = 'https://www.techo-bloc.com'
 
     product_details = {}
-    product_details['name'] = soup.select_one('.roc-pdp-title__product-name').text.strip()
+    product_details['name'] = soup.select_one('.title').text.strip()
     product_details['category'] = soup.select_one('.roc-pdp-title__product-category-text').text.strip()
 
 

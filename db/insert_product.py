@@ -14,7 +14,8 @@ def insert_product(product_details):
     # Create a new Product instance
     product = Product(
         name=product_details['name'],
-        category=product_details['category']
+        category=product_details['category'],
+        description = product_details['description']
     )
 
     # Add the Product to the session
@@ -64,6 +65,8 @@ def insert_product(product_details):
             image_url=image_url
         )
         session.add(image_entry)
+
+
 
     # Commit all changes
     session.commit()

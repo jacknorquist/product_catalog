@@ -158,6 +158,11 @@ def get_product_details(product_url):
         except Exception as e:
             print(f"Error processing texture {texture_name}: {e}")
 
+
+    descriptionDiv = driver.find_element(By.CSS_SELECTOR, '#tab-description-description')
+    description = descriptionDiv.find_element(By.TAG_NAME, 'p').text.strip()
+
+
     images = []
 
 ##dont need main images right now
@@ -170,6 +175,7 @@ def get_product_details(product_url):
     product_details['colors'] = colors
     product_details['textures'] = textures
     product_details['images'] = images
+    product_details['description'] = description
 
     driver.quit()
     return product_details

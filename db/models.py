@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Index
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 import os
@@ -9,6 +9,7 @@ load_dotenv()
 
 # Define the base class for declarative models
 Base = declarative_base()
+
 
 class Manufacturer(Base):
     __tablename__ = 'manufacturers'
@@ -31,6 +32,11 @@ class Product(Base):
     colors = relationship('Color', back_populates='product', cascade="all, delete-orphan")
     textures = relationship('Texture', back_populates='product', cascade="all, delete-orphan")
     images = relationship('ProductImage', back_populates='product', cascade="all, delete-orphan")
+
+    __table_args__ = (
+        Index('ix_product_manufacturer_id', 'manufacturer_id'),
+    )
+
 
 # Define the Color model
 class Color(Base):
@@ -86,7 +92,6 @@ class TextureImage(Base):
 
 
 
-Index('ix_product_manufacturer_id', Product.manufacturer_id)
 
 
 # Retrieve the database URL from environment variables

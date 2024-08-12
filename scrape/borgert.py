@@ -31,7 +31,7 @@ def get_product_links(catalog_url):
     html = driver.page_source
     # response = requests.get(catalog_url)
     soup = BeautifulSoup(html, 'html.parser');
-    product_links = [urljoin(catalog_url, a['href']) for a in soup.select('.menu-item menu-item-type-post_type menu-item-object-page') if 'href' in a.attrs]
+    product_links = [urljoin(catalog_url, a['href']) for a in soup.select('.menu-item menu-item-type-post_type.menu-item-object-page') if 'href' in a.attrs]
     # product_links = [a['href'] for a in soup.select('.techobloc-product-card__link')]
     return product_links
 
@@ -161,7 +161,7 @@ def get_product_details(product_url):
             print(f"Error processing texture {texture_name}: {e}")
 
 
-    descriptionDiv = driver.find_element(By.CSS_SELECTOR, '#tab-description-description')
+    descriptionDiv = driver.find_element(By.CSS_SELECTOR, '.content)
     description = descriptionDiv.find_element(By.TAG_NAME, 'p').text.strip()
 
 

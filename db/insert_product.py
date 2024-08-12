@@ -3,19 +3,23 @@ import os
 
 # Add the root directory of your project to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-from db.models import Session, Product, Color, Texture, ProductImage, ColorImage, TextureImage
+from db.models import Session, Product, Color, Texture, ProductImage, ColorImage, TextureImage, Manufacturer
 
 
-def insert_product(product_details):
-    print(product_details, 'product detauls at insert product')
+
+
+def insert_product(product_details, manufacturer_name):
     # Create a new session
     session = Session()
+    # Get the manufacturer
+    manufacturer = session.query(Manufacturer).filter_by(name=manufacturer_name).one()
 
     # Create a new Product instance
     product = Product(
         name=product_details['name'],
         category=product_details['category'],
-        description = product_details['description']
+        description = product_details['description'],
+        manufacturer = manufacturer
     )
 
     # Add the Product to the session

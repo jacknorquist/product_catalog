@@ -158,9 +158,9 @@ def get_product_details(product_url):
         except Exception as e:
             print(f"Error processing texture {texture_name}: {e}")
 
-
     descriptionDiv = driver.find_element(By.CSS_SELECTOR, '#tab-description-description')
-    description = descriptionDiv.find_element(By.TAG_NAME, 'p').text.strip()
+    description = descriptionDiv.find_element(By.CSS_SELECTOR, '.roc-pdp-sections__accordion-body').text.strip()
+
 
 
     images = []
@@ -184,7 +184,7 @@ def scrape_catalog(catalog_url = BASE_URL):
     product_links = get_product_links(catalog_url)
     all_products = []
     product_details = get_product_details(product_links[0])
-    insert_product(product_details)
+    insert_product(product_details, 'Techo Bloc')
     # for link in product_links:
     #     product_details = get_product_details(link)
     #     all_products.append(product_details)

@@ -59,7 +59,6 @@ def get_product_details(product_url):
 
     # Use Selenium to interact with elements
     colors = []
-    print('here at colors')
     # color_list = driver.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-list')  # First instance for colors
     color_list = WebDriverWait(driver, 10).until(
     EC.presence_of_all_elements_located((By.CSS_SELECTOR, '.roc-pdp-selections__colors-list'))
@@ -74,7 +73,6 @@ def get_product_details(product_url):
         # Click the color label to show more images
         try:
             color_label = color_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-label')
-            print('in the try for colors')
             if color_label:
                 wait.until(EC.element_to_be_clickable(color_label))
                 driver.execute_script("arguments[0].click();", color_label)
@@ -159,9 +157,9 @@ def get_product_details(product_url):
             print(f"Error processing texture {texture_name}: {e}")
 
     descriptionDiv = driver.find_element(By.CSS_SELECTOR, '#tab-description-description')
-    description = descriptionDiv.find_element(By.CSS_SELECTOR, '.roc-pdp-sections__accordion-body').text.strip()
+    description = descriptionDiv.find_element(By.CSS_SELECTOR, '[data-testid="product-page-tab-description-description-value"]').text.strip()
 
-
+    print('descriptionnnnnnnnnnnnnnnnnnnnnnnnnn', description)
 
     images = []
 

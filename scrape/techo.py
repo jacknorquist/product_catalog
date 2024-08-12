@@ -81,7 +81,7 @@ def get_product_details(product_url):
 
                 # Collect main images
                 main_images = []
-                img_items = driver.find_elements(By.CSS_SELECTOR, '.roc-pdp-asset-scroller__button roc-pdp-asset-scroller__button--active')
+                img_items = driver.find_elements(By.CSS_SELECTOR, '.roc-pdp-asset-scroller__button')
                 for img_item in img_items:
                     img_item.click()
                     try:

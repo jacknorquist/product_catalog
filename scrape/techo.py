@@ -159,7 +159,6 @@ def get_product_details(product_url):
     descriptionDiv = driver.find_element(By.CSS_SELECTOR, '#tab-description-description')
     description = descriptionDiv.find_element(By.CSS_SELECTOR, '[data-testid="product-page-tab-description-description-value"]').text.strip()
 
-    print('descriptionnnnnnnnnnnnnnnnnnnnnnnnnn', descriptionDiv)
 
     images = []
 

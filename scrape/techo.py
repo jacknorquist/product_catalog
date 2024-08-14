@@ -77,7 +77,7 @@ def get_product_details(product_url):
                 wait.until(EC.element_to_be_clickable(color_label))
                 driver.execute_script("arguments[0].click();", color_label)
                 wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.roc-pdp-asset-scroller__item')))
-                time.sleep(1)  # Allow time for the images to load
+                time.sleep(4)  # Allow time for the images to load
 
                 # Collect main images
                 main_images = []
@@ -126,7 +126,7 @@ def get_product_details(product_url):
                 wait.until(EC.element_to_be_clickable(texture_label))
                 driver.execute_script("arguments[0].click();", texture_label)
                 wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.roc-pdp-asset-scroller__item')))
-                time.sleep(1)  # Allow time for the images to load
+                time.sleep(4)  # Allow time for the images to load
 
                 # Collect main images
                 main_images = []
@@ -160,6 +160,35 @@ def get_product_details(product_url):
     descriptionButton = descriptionDiv.find_element(By.CSS_SELECTOR, '.roc-pdp-sections__accordion-button')
     driver.execute_script("arguments[0].click();", descriptionButton)
     description = descriptionDiv.find_element(By.CSS_SELECTOR, '.roc-pdp-sections__accordion-body').text.strip()
+
+
+     # Find the container with the sizes list
+    sizes_list_container = driver.find_element(By.CLASS_NAME, 'roc-pdp-selections__sizes-list')
+
+    # Find all size items within the container
+    size_items = sizes_list_container.find_elements(By.CLASS_NAME, 'roc-pdp-selections__sizes-item')
+
+    # Initialize a list to store the size entries
+    size_entries = []
+
+    # Loop through each size item to extract information
+    for size_item in size_items:
+        # Find and extract the HEIGHT
+        height_element = size_item.find_element(By.CLASS_NAME, 'roc-pdp-selections__sizes-product')
+        height = height_element.text.strip()
+
+        # Find and extract all DIMENSIONS
+        dimension_elements = size_item.find_elements(By.CLASS_NAME, 'roc-pdp-selections__sizes-size')
+        dimensions = [dim.text.strip() for dim in dimension_elements]
+
+        # Construct the size entry dictionary
+        size_entry = {
+            'height': height,
+            'dimensions': dimensions
+        }
+
+        # Add the size entry to the list
+        size_entries.append(size_entry)
 
 
 

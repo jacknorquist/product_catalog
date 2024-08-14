@@ -157,7 +157,10 @@ def get_product_details(product_url):
             print(f"Error processing texture {texture_name}: {e}")
 
     descriptionDiv = driver.find_element(By.CSS_SELECTOR, '#tab-description-description')
-    description = descriptionDiv.find_element(By.CSS_SELECTOR, '[data-testid="product-page-tab-description-description-value"]').text.strip()
+    descriptionButton = descriptionDiv.find_element(By.CSS_SELECTOR, '.roc-pdp-sections__accordion-button')
+    driver.execute_script("arguments[0].click();", descriptionButton)
+    description = descriptionDiv.find_element(By.CSS_SELECTOR, '.roc-pdp-sections__accordion-body').text.strip()
+
 
 
     images = []

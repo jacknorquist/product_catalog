@@ -52,7 +52,8 @@ def get_product_details(product_url):
     base_url = 'https://www.techo-bloc.com'
 
     product_details = {}
-    product_details['name'] = soup.select_one('.roc-pdp-title__product-name').text.strip()
+    product_name = soup.select_one('.roc-pdp-title__product-name').text.strip()
+    product_details['name'] = product_name
     product_details['category'] = soup.select_one('.roc-pdp-title__product-category-text').text.strip()
 
 
@@ -77,13 +78,16 @@ def get_product_details(product_url):
                 wait.until(EC.element_to_be_clickable(color_label))
                 driver.execute_script("arguments[0].click();", color_label)
                 wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.roc-pdp-asset-scroller__item')))
-                time.sleep(4)  # Allow time for the images to load
+                time.sleep(5)  # Allow time for the images to load
 
                 # Collect main images
                 main_images = []
                 img_items = driver.find_elements(By.CSS_SELECTOR, '.roc-pdp-asset-scroller__button')
                 for img_item in img_items:
-                    img_item.click()
+                    wait.until(EC.element_to_be_clickable(img_item))
+                    is_active = 'active' in img_item.get_attribute('class')
+                    if not is_active:
+                        img_item.click()
                     try:
                         main_image_element = WebDriverWait(driver, 10).until(
                             EC.visibility_of_element_located((By.CSS_SELECTOR, '.roc-pdp-main-image__image.roc-lazy-image--loaded'))
@@ -94,8 +98,8 @@ def get_product_details(product_url):
                         print(f"Error processing image item: {e}")
 
                 # Upload thumbnail and main images
-                s3_thumbnail_img_url = upload_image_stream_to_s3(absolute_thumbnail_img_url, s3_bucket_name, f"colors/{color_name}_thumbnail.jpg")
-                s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"colors/{color_name}_main_{i}.jpg") for i, img_url in enumerate(main_images)]
+                s3_thumbnail_img_url = upload_image_stream_to_s3(absolute_thumbnail_img_url, s3_bucket_name, f"techo/{product_name}/colors/{color_name}_thumbnail.jpg")
+                s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"techo/{product_name}/colors/{color_name}_main_{i}.jpg") for i, img_url in enumerate(main_images)]
 
                 colors.append({
                     'name': color_name,
@@ -143,8 +147,8 @@ def get_product_details(product_url):
                         print(f"Error processing image item: {e}")
 
                 # Upload thumbnail and main images
-                s3_thumbnail_img_url = upload_image_stream_to_s3(absolute_thumbnail_img_url, s3_bucket_name, f"textures/{texture_name}_thumbnail.jpg")
-                s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"textures/{texture_name}_main_{i}.jpg") for i, img_url in enumerate(main_images)]
+                s3_thumbnail_img_url = upload_image_stream_to_s3(absolute_thumbnail_img_url, s3_bucket_name, f"techo/{product_name}/textures/{texture_name}_thumbnail.jpg")
+                s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"techo/{product_name}/textures/{texture_name}_main_{i}.jpg") for i, img_url in enumerate(main_images)]
 
                 textures.append({
                     'name': texture_name,
@@ -180,7 +184,7 @@ def get_product_details(product_url):
         # Find and extract all DIMENSIONS
         dimension_elements = size_item.find_elements(By.CLASS_NAME, 'roc-pdp-selections__sizes-size')
         dimensions = [dim.text.strip() for dim in dimension_elements]
-        s3_size_img_url = upload_image_stream_to_s3(absolute_size_img_url, s3_bucket_name, f"sizes/{dimensions}.jpg")
+        s3_size_img_url = upload_image_stream_to_s3(absolute_size_img_url, s3_bucket_name, f"techo/{product_name}/sizes/{name}.jpg")
 
         # Construct the size entry dictionary
         size_entry = {
@@ -191,6 +195,10 @@ def get_product_details(product_url):
 
         # Add the size entry to the list
         size_entries.append(size_entry)
+
+    spec_sheet_url=driver.find_element(By.CSS_SELECTOR, '.roc-pdp-technical-documents__download').get_attribute('src')
+    absolute_spec_sheet_url = urljoin(base_url, spec_sheet_url)
+    s3_spec_sheet_url = upload_image_stream_to_s3(absolute_spec_sheet_url, s3_bucket_name, f"techo/{product_name}/spec_sheet.pdf")
 
 
 
@@ -208,6 +216,7 @@ def get_product_details(product_url):
     product_details['images'] = images
     product_details['description'] = description
     product_details['sizes'] = size_entries
+    product_details['spec_sheet'] = s3_spec_sheet_url
 
     driver.quit()
     return product_details

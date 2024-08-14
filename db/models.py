@@ -29,6 +29,7 @@ class Product(Base):
     category = Column(String, nullable=False)
     manufacturer_id = Column(Integer, ForeignKey('manufacturers.id'), nullable=False)
     description = Column(String)
+    spec_sheet = Column(String)
     manufacturer = relationship('Manufacturer', back_populates='products')
     colors = relationship('Color', back_populates='product', cascade="all, delete-orphan")
     textures = relationship('Texture', back_populates='product', cascade="all, delete-orphan")

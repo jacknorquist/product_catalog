@@ -19,7 +19,8 @@ def insert_product(product_details, manufacturer_name):
         name=product_details['name'],
         category=product_details['category'],
         description = product_details['description'],
-        manufacturer = manufacturer
+        manufacturer = manufacturer,
+        spec_sheet = product_details['spec_sheet']
     )
 
     # Add the Product to the session
@@ -31,7 +32,7 @@ def insert_product(product_details, manufacturer_name):
         color_entry = Color(
             product_id=product.id,
             name=color['name'],
-            image_url=color['thumbnail_image_url']  # Thumbnail URL
+            image_url=color['thumbnail_image_url']
         )
         session.add(color_entry)
         session.commit()  # Commit to get the color ID

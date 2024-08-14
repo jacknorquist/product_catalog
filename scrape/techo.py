@@ -84,9 +84,9 @@ def get_product_details(product_url):
                 main_images = []
                 img_items = driver.find_elements(By.CSS_SELECTOR, '.roc-pdp-asset-scroller__button')
                 for img_item in img_items:
-                    wait.until(EC.element_to_be_clickable(img_item))
                     is_active = 'active' in img_item.get_attribute('class')
                     if not is_active:
+                        WebDriverWait(driver, 10).until(EC.element_to_be_clickable(img_item))
                         img_item.click()
                     try:
                         main_image_element = WebDriverWait(driver, 10).until(
@@ -198,7 +198,7 @@ def get_product_details(product_url):
 
     spec_sheet_url=driver.find_element(By.CSS_SELECTOR, '.roc-pdp-technical-documents__download').get_attribute('src')
     absolute_spec_sheet_url = urljoin(base_url, spec_sheet_url)
-    s3_spec_sheet_url = upload_image_stream_to_s3(absolute_spec_sheet_url, s3_bucket_name, f"techo/{product_name}/spec_sheet.pdf")
+    s3_spec_sheet_url = upload_image_stream_to_s3(absolute_spec_sheet_url, s3_bucket_name, f"techo/{product_name}/spec_sheet.pdf", 'application/pdf')
 
 
 

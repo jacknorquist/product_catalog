@@ -3,7 +3,7 @@ import os
 
 # Add the root directory of your project to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-from db.models import Session, Product, Color, Texture, ProductImage, ColorImage, TextureImage, Manufacturer
+from db.models import Session, Product, Color, Texture, ProductImage, ColorImage, TextureImage, Manufacturer, Size
 
 
 
@@ -69,6 +69,15 @@ def insert_product(product_details, manufacturer_name):
             image_url=image_url
         )
         session.add(image_entry)
+
+    for size in product_details['sizes']:
+        size_entry = Size(
+            product_id=product.id,
+            name=size['name'],
+            image_url=size['image'],
+            dimensions=size['dimensions']
+        )
+        session.add(size_entry)
 
 
 

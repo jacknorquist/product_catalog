@@ -173,17 +173,19 @@ def get_product_details(product_url):
 
     # Loop through each size item to extract information
     for size_item in size_items:
-        # Find and extract the HEIGHT
-        height_element = size_item.find_element(By.CLASS_NAME, 'roc-pdp-selections__sizes-product')
-        height = height_element.text.strip()
+        size_img = size_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__sizes-asset').get_attribute('src')
+        absolute_size_img_url = urljoin(base_url, size_img)
 
+        name = size_item.find_element(By.CSS_SELECTOR,'.roc-pdp-selections__sizes-product').text.strip()
         # Find and extract all DIMENSIONS
         dimension_elements = size_item.find_elements(By.CLASS_NAME, 'roc-pdp-selections__sizes-size')
         dimensions = [dim.text.strip() for dim in dimension_elements]
+        s3_size_img_url = upload_image_stream_to_s3(absolute_size_img_url, s3_bucket_name, f"sizes/{dimensions}.jpg")
 
         # Construct the size entry dictionary
         size_entry = {
-            'height': height,
+            'name': name,
+            'image': s3_size_img_url,
             'dimensions': dimensions
         }
 
@@ -205,6 +207,7 @@ def get_product_details(product_url):
     product_details['textures'] = textures
     product_details['images'] = images
     product_details['description'] = description
+    product_details['sizes'] = size_entries
 
     driver.quit()
     return product_details

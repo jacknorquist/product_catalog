@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Index
 from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.ext.declarative import declarative_base
 import os
 from dotenv import load_dotenv
@@ -32,10 +33,23 @@ class Product(Base):
     colors = relationship('Color', back_populates='product', cascade="all, delete-orphan")
     textures = relationship('Texture', back_populates='product', cascade="all, delete-orphan")
     images = relationship('ProductImage', back_populates='product', cascade="all, delete-orphan")
+    sizes = relationship('Size', back_populates='product', cascade="all, delete-orphan")
 
     __table_args__ = (
         Index('ix_product_manufacturer_id', 'manufacturer_id'),
     )
+
+
+class Size(Base):
+    __tablename__ = 'sizes'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    product_id = Column(Integer, ForeignKey('products.id'), nullable=False)
+    name = Column(String)
+    image_url = Column(String(255))
+    dimensions = Column(ARRAY(String), nullable=False)  # Use ARRAY for PostgreSQL or consider a separate table for other DBs
+    # Relationship with Product
+    product = relationship('Product', back_populates='sizes')
 
 
 # Define the Color model

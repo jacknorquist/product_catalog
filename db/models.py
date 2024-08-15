@@ -62,7 +62,7 @@ class Color(Base):
     name = Column(String, nullable=False)
     image_url = Column(String, nullable=False)  # Thumbnail URL
     product = relationship('Product', back_populates='colors')
-    color_images = relationship('ColorImage', back_populates='color', cascade="all, delete-orphan")
+    color_images = relationship('ProductImage', back_populates='color') # Link to ProductImage model
 
 # Define the Texture model
 class Texture(Base):
@@ -73,7 +73,7 @@ class Texture(Base):
     name = Column(String, nullable=False)
     image_url = Column(String, nullable=False)  # Thumbnail URL
     product = relationship('Product', back_populates='textures')
-    texture_images = relationship('TextureImage', back_populates='texture', cascade="all, delete-orphan")
+
 
 # Define the ProductImage model
 class ProductImage(Base):
@@ -81,29 +81,31 @@ class ProductImage(Base):
 
     id = Column(Integer, primary_key=True)
     product_id = Column(Integer, ForeignKey('products.id'), nullable=False)
+    color_id = Column(Integer, ForeignKey('colors.id'), nullable=True)
     image_url = Column(String, nullable=False)
     product = relationship('Product', back_populates='images')
-
-# Define the ColorImage model
-class ColorImage(Base):
-    __tablename__ = 'color_images'
-
-    id = Column(Integer, primary_key=True)
-    color_id = Column(Integer, ForeignKey('colors.id'), nullable=False)
-    image_url = Column(String, nullable=False)
     color = relationship('Color', back_populates='color_images')
 
+# Define the ColorImage model
+# class ColorImage(Base):
+#     __tablename__ = 'color_images'
+
+#     id = Column(Integer, primary_key=True)
+#     color_id = Column(Integer, ForeignKey('colors.id'), nullable=False)
+#     image_url = Column(String, nullable=False)
+#     color = relationship('Color', back_populates='color_images')
 
 
 
-# Define the TextureImage model
-class TextureImage(Base):
-    __tablename__ = 'texture_images'
 
-    id = Column(Integer, primary_key=True)
-    texture_id = Column(Integer, ForeignKey('textures.id'), nullable=False)
-    image_url = Column(String, nullable=False)
-    texture = relationship('Texture', back_populates='texture_images')
+# # Define the TextureImage model
+# class TextureImage(Base):
+#     __tablename__ = 'texture_images'
+
+#     id = Column(Integer, primary_key=True)
+#     texture_id = Column(Integer, ForeignKey('textures.id'), nullable=False)
+#     image_url = Column(String, nullable=False)
+#     texture = relationship('Texture', back_populates='texture_images')
 
 
 

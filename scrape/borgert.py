@@ -23,19 +23,43 @@ s3_bucket_name='productscatalog'
 # Base URL for the product catalog
 BASE_URL = 'https://www.borgertproducts.com/'  # Replace with actual catalog URL
 
+
 def get_product_links(catalog_url):
     chrome_options = Options()
     service = Service('./chromedriver')
     driver = webdriver.Chrome(service=service, options=chrome_options)
-    driver.get(catalog_url)
-    html = driver.page_source
-    # response = requests.get(catalog_url)
-    soup = BeautifulSoup(html, 'html.parser');
-    product_links = [urljoin(catalog_url, a['href']) for a in soup.select('.menu-item menu-item-type-post_type.menu-item-object-page') if 'href' in a.attrs]
-    # product_links = [a['href'] for a in soup.select('.techobloc-product-card__link')]
-    return product_links
 
-def get_product_details(product_url):
+    driver.get(catalog_url)
+
+    # Use WebDriverWait to wait for the page to fully load
+    wait = WebDriverWait(driver, 10)
+    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.sub-menu')))
+
+    html = driver.page_source
+    soup = BeautifulSoup(html, 'html.parser')
+
+    # List to store product links with their associated categories
+    product_info = []
+
+    # Iterate over each .sub-menu element
+    for sub_menu in soup.select('.sub-menu'):
+        # Find the sibling <a> element that contains the category
+        category_element = sub_menu.find_previous_sibling('a')
+        if category_element:
+            category_text = category_element.get_text(strip=True)
+        else:
+            category_text = 'Unknown'
+
+        # Iterate over each .menu-item.menu-item-type-post_type within this sub-menu
+        for item in sub_menu.select('.menu-item.menu-item-type-post_type'):
+            link_element = item.find('a', href=True)
+            if link_element:
+                product_link = urljoin(catalog_url, link_element['href'])
+                product_info.append((product_link, category_text))
+
+    driver.quit()
+    return product_info
+def get_product_details(product_url, category):
 
     chrome_options = Options()
     service = Service('./chromedriver')
@@ -44,8 +68,6 @@ def get_product_details(product_url):
 
     # Use WebDriverWait to wait for the page to fully load
     wait = WebDriverWait(driver, 10)
-    ##this wont work for some.
-    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.title')))
 
 
     # Get the initial page source
@@ -54,14 +76,33 @@ def get_product_details(product_url):
     base_url = 'https://www.techo-bloc.com'
 
     product_details = {}
-    product_details['name'] = soup.select_one('.title').text.strip()
-    product_details['category'] = soup.select_one('.roc-pdp-title__product-category-text').text.strip()
+    ## Category, name, description
+
+    textWrapper=driver.find_element(By.CSS_SELECTOR,'.wpb_text_column')
+    product_details['name'] = textWrapper.find_element(By.TAG_NAME, 'H1').text.strip()
+    product_details['description'] = textWrapper.find_element(By.CSS_SELECTOR, '.content').text.strip()
+    product_details['category'] = category
+
+
+        # List to store image URLs
+    image_urls = []
+
+    ##images
+    vc_items = soup.find_all(class_='vc_item')
+        for item in vc_items:
+        # Find the image within this vc_item
+        img_tag = item.find('img')
+        if img_tag and 'src' in img_tag.attrs:
+            img_url = img_tag['src']
+            # Join the URL with the base URL
+            image_urls.append(img_url)
+            s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"borgert/{product_details['name']}/images/main_{i}.jpg") for i, img_url in enumerate(image_urls)]
+            product_details['images'] = s3_main_images
 
 
 
     # Use Selenium to interact with elements
     colors = []
-    print('here at colors')
     # color_list = driver.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-list')  # First instance for colors
     color_list = WebDriverWait(driver, 10).until(
     EC.presence_of_all_elements_located((By.CSS_SELECTOR, '.roc-pdp-selections__colors-list'))
@@ -177,19 +218,21 @@ def get_product_details(product_url):
     product_details['colors'] = colors
     product_details['textures'] = textures
     product_details['images'] = images
-    product_details['description'] = description
 
     driver.quit()
     return product_details
 
 def scrape_catalog(catalog_url = BASE_URL):
     product_links = get_product_links(catalog_url)
+
     all_products = []
-    product_details = get_product_details(product_links[0])
-    insert_product(product_details)
-    # for link in product_links:
-    #     product_details = get_product_details(link)
-    #     all_products.append(product_details)
+    for link, category in product_links:
+        product_details = get_product_details(link, category)
+        all_products.append(product_details)
+
+    for product in all_products:
+        insert_product(product)
+
     return all_products
 
 if __name__ == '__main__':

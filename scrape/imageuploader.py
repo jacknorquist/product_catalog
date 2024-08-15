@@ -26,7 +26,6 @@ def upload_image_stream_to_s3(image_url, bucket_name, s3_key, content_type='img/
     try:
         # Stream the image data
         response = requests.get(image_url, stream=True)
-        print(content_type)
 
         # Check if the request was successful
         if response.status_code == 200:

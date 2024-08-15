@@ -47,10 +47,11 @@ def get_product_details(product_url):
     html = driver.page_source
     soup = BeautifulSoup(html, 'html.parser')
     base_url = 'https://www.techo-bloc.com'
-
+    s3_spec_sheet_url = None
     product_details = {}
     product_name = soup.select_one('.roc-pdp-title__product-name').text.strip()
     product_details['name'] = product_name
+    print(product_name, 'product nameeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee')
     try:
         product_details['category'] = soup.select_one('.roc-pdp-title__product-category-text').text.strip()
     except Exception as e:
@@ -174,53 +175,54 @@ def get_product_details(product_url):
             except Exception as e:
                 print(f"Error processing texture {texture_name}: {e}")
 
-        # Find the container with the sizes list
-        sizes_list_container = driver.find_element(By.CLASS_NAME, 'roc-pdp-selections__sizes-list')
+        if product_details['name'] != 'Maya' and product_details['category'] != 'Pool Coping & Wall Caps' and product_details['category'] != 'Stone Steps' and product_details['category'] != 'Garden Edging Stones':
 
-        # Find all size items within the container
-        size_items = sizes_list_container.find_elements(By.CLASS_NAME, 'roc-pdp-selections__sizes-item')
+            # Find the container with the sizes list
+            sizes_list_container = driver.find_element(By.CLASS_NAME, 'roc-pdp-selections__sizes-list')
 
-        # Initialize a list to store the size entries
+            # Find all size items within the container
+            size_items = sizes_list_container.find_elements(By.CLASS_NAME, 'roc-pdp-selections__sizes-item')
+            # Initialize a list to store the size entries
 
-        # Loop through each size item to extract information
-        for size_item in size_items:
-            size_img = size_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__sizes-asset').get_attribute('src')
-            absolute_size_img_url = urljoin(base_url, size_img)
+            # Loop through each size item to extract information
+            for size_item in size_items:
+                size_img = size_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__sizes-asset').get_attribute('src')
+                absolute_size_img_url = urljoin(base_url, size_img)
 
-            name = size_item.find_element(By.CSS_SELECTOR,'.roc-pdp-selections__sizes-product').text.strip()
-            # Find and extract all DIMENSIONS
-            dimension_elements = size_item.find_elements(By.CLASS_NAME, 'roc-pdp-selections__sizes-size')
-            if dimension_elements:
-                dimensions = [dim.text.strip() for dim in dimension_elements]
-            s3_size_img_url = upload_image_stream_to_s3(absolute_size_img_url, s3_bucket_name, f"techo/{product_name}/sizes/{name}.png")
+                name = size_item.find_element(By.CSS_SELECTOR,'.roc-pdp-selections__sizes-product').text.strip()
+                # Find and extract all DIMENSIONS
+                dimension_elements = size_item.find_elements(By.CLASS_NAME, 'roc-pdp-selections__sizes-size')
+                if dimension_elements:
+                    dimensions = [dim.text.strip() for dim in dimension_elements]
+                s3_size_img_url = upload_image_stream_to_s3(absolute_size_img_url, s3_bucket_name, f"techo/{product_name}/sizes/{name}.png")
 
-            # Construct the size entry dictionary
-            size_entry = {
-                'name': name,
-                'image': s3_size_img_url,
-                'dimensions': dimensions
-            }
+                # Construct the size entry dictionary
+                size_entry = {
+                    'name': name,
+                    'image': s3_size_img_url,
+                    'dimensions': dimensions
+                }
 
-            # Add the size entry to the list
-            size_entries.append(size_entry)
+                # Add the size entry to the list
+                size_entries.append(size_entry)
 
-        iframe = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, 'iframe#hubspot-conversations-iframe'))
-        )
-        driver.switch_to.frame(iframe)
-        assist_close = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, '.VizExIconButton__AbstractVizExIconButton-rat7tt-0'))
-        )
-        assist_close.click();
+            iframe = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, 'iframe#hubspot-conversations-iframe'))
+            )
+            driver.switch_to.frame(iframe)
+            assist_close = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, '.VizExIconButton__AbstractVizExIconButton-rat7tt-0'))
+            )
+            assist_close.click();
 
-        driver.switch_to.default_content()
+            driver.switch_to.default_content()
 
-        spec_button = driver.find_elements(By.CSS_SELECTOR, '#tab-toggle-65e9a191-5747-4a63-09d6-08dc9f5470cb')
-        if len(spec_button)> 0:
-            spec_button[0].click()
-            spec_sheet_url=driver.find_element(By.CSS_SELECTOR, '.roc-pdp-technical-documents__download').get_attribute('href')
-            absolute_spec_sheet_url = urljoin(base_url, spec_sheet_url)
-            s3_spec_sheet_url = upload_image_stream_to_s3(absolute_spec_sheet_url, s3_bucket_name, f"techo/{product_name}/spec_sheet.pdf", 'application/pdf')
+            spec_button = driver.find_elements(By.CSS_SELECTOR, '#tab-toggle-65e9a191-5747-4a63-09d6-08dc9f5470cb')
+            if len(spec_button)> 0:
+                spec_button[0].click()
+                spec_sheet_url=driver.find_element(By.CSS_SELECTOR, '.roc-pdp-technical-documents__download').get_attribute('href')
+                absolute_spec_sheet_url = urljoin(base_url, spec_sheet_url)
+                s3_spec_sheet_url = upload_image_stream_to_s3(absolute_spec_sheet_url, s3_bucket_name, f"techo/{product_name}/spec_sheet.pdf", 'application/pdf')
 
 
     else:

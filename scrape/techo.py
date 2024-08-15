@@ -51,7 +51,11 @@ def get_product_details(product_url):
     product_details = {}
     product_name = soup.select_one('.roc-pdp-title__product-name').text.strip()
     product_details['name'] = product_name
-    product_details['category'] = soup.select_one('.roc-pdp-title__product-category-text').text.strip()
+    try:
+        product_details['category'] = soup.select_one('.roc-pdp-title__product-category-text').text.strip()
+    except Exception as e:
+        product_details['castegory'] = 'Misc'
+
     size_entries = []
     colors = []
     textures = []
@@ -63,7 +67,7 @@ def get_product_details(product_url):
 
 
 
-    if product_details['category'] != 'Accessories':
+    if product_details['category'] != 'Accessories' and product_details['name'] != 'Breeo - Zentro Smokeless Steel Insert' and product_details['category'] != 'Misc':
         # Use Selenium to interact with elements
         # color_list = driver.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-list')  # First instance for colors
         color_list = WebDriverWait(driver, 10).until(
@@ -255,7 +259,9 @@ def get_product_details(product_url):
     product_details['images'] = main_images
     product_details['description'] = description
     product_details['sizes'] = size_entries
-    product_details['spec_sheet'] = s3_spec_sheet_url
+    if s3_spec_sheet_url:
+        product_details['spec_sheet'] = s3_spec_sheet_url
+
 
     driver.quit()
     return product_details

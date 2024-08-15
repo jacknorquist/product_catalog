@@ -23,16 +23,13 @@ s3_bucket_name='productscatalog'
 # Base URL for the product catalog
 BASE_URL = 'https://www.techo-bloc.com/all-products'  # Replace with actual catalog URL
 
-def get_product_links(catalog_url):
-    chrome_options = Options()
-    service = Service('./chromedriver')
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-    driver.get(catalog_url)
+def get_product_links(driver):
+    # Retrieve the current page source
     html = driver.page_source
-    # response = requests.get(catalog_url)
-    soup = BeautifulSoup(html, 'html.parser');
-    product_links = [urljoin(catalog_url, a['href']) for a in soup.select('.techobloc-product-card__link') if 'href' in a.attrs]
-    # product_links = [a['href'] for a in soup.select('.techobloc-product-card__link')]
+    soup = BeautifulSoup(html, 'html.parser')
+    # Use the current URL to create absolute links
+    product_links = [urljoin(driver.current_url, a['href']) for a in soup.select('.techobloc-product-card__link') if 'href' in a.attrs]
+    return product_links
     return product_links
 
 def get_product_details(product_url):
@@ -91,7 +88,7 @@ def get_product_details(product_url):
                     wait.until(EC.element_to_be_clickable(color_label))
                     driver.execute_script("arguments[0].click();", color_label)
                     wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.roc-pdp-asset-scroller__item')))
-                    time.sleep(5)  # Allow time for the images to load
+                    time.sleep(3)  # Allow time for the images to load
 
                     # Collect main images
                     main_images = []
@@ -112,7 +109,7 @@ def get_product_details(product_url):
 
                     # Upload thumbnail and main images
                     s3_thumbnail_img_url = upload_image_stream_to_s3(absolute_thumbnail_img_url, s3_bucket_name, f"techo/{product_name}/colors/{color_name}_thumbnail.jpg")
-                    s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"techo/{product_name}/colors/{color_name}_main_{i}.jpg") for i, img_url in enumerate(main_images)]
+                    s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"techo/{product_name}/images/{color_name}_main_{i}.jpg") for i, img_url in enumerate(main_images)]
 
                     colors.append({
                         'name': color_name,
@@ -214,12 +211,12 @@ def get_product_details(product_url):
 
         driver.switch_to.default_content()
 
-        spec_button = driver.find_element(By.CSS_SELECTOR, '#tab-toggle-65e9a191-5747-4a63-09d6-08dc9f5470cb')
-        spec_button.click()
-
-        spec_sheet_url=driver.find_element(By.CSS_SELECTOR, '.roc-pdp-technical-documents__download').get_attribute('href')
-        absolute_spec_sheet_url = urljoin(base_url, spec_sheet_url)
-        s3_spec_sheet_url = upload_image_stream_to_s3(absolute_spec_sheet_url, s3_bucket_name, f"techo/{product_name}/spec_sheet.pdf", 'application/pdf')
+        spec_button = driver.find_elements(By.CSS_SELECTOR, '#tab-toggle-65e9a191-5747-4a63-09d6-08dc9f5470cb')
+        if len(spec_button)> 0:
+            spec_button[0].click()
+            spec_sheet_url=driver.find_element(By.CSS_SELECTOR, '.roc-pdp-technical-documents__download').get_attribute('href')
+            absolute_spec_sheet_url = urljoin(base_url, spec_sheet_url)
+            s3_spec_sheet_url = upload_image_stream_to_s3(absolute_spec_sheet_url, s3_bucket_name, f"techo/{product_name}/spec_sheet.pdf", 'application/pdf')
 
 
     else:
@@ -263,14 +260,51 @@ def get_product_details(product_url):
     driver.quit()
     return product_details
 
-def scrape_catalog(catalog_url = BASE_URL):
-    product_links = get_product_links(catalog_url)
+def scrape_catalog(catalog_url=BASE_URL):
+    # Setup WebDriver
+    chrome_options = Options()
+    service = Service('./chromedriver')
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+    wait = WebDriverWait(driver, 10)
+
+    # Start at the catalog URL
+    driver.get(catalog_url)
+
+    product_links = []
+    page_number = 1
+    max_pages = 11
+
+    while page_number <= max_pages:
+        # Extract product links from the current page
+        page_links = get_product_links(driver)
+        product_links.extend(page_links)
+
+        # Check for the "Next" button and handle pagination
+        try:
+            next_button = wait.until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, '.hawk-pagination__item.hawk-pagination__item--right'))  # Adjust selector as needed
+            )
+            next_button.click()
+            time.sleep(2)  # Wait for the page to load and new URL to be set
+            page_number += 1
+        except Exception as e:
+            print(f"No more pages or error: {e}")
+            break
+
+    driver.quit()
+
+
+
     all_products = []
-    product_details = get_product_details(product_links[0])
-    insert_product(product_details, 'Techo Bloc')
-    # for link in product_links:
-    #     product_details = get_product_details(link)
-    #     all_products.append(product_details)
+    # product_details = get_product_details(product_links[0])
+    # insert_product(product_details, 'Techo Bloc')
+    for link in product_links:
+        product_details = get_product_details(link)
+        all_products.append(product_details)
+
+    for product in all_product:
+        insert_product(product)
+
     return all_products
 
 if __name__ == '__main__':

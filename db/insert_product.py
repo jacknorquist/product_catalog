@@ -20,7 +20,7 @@ def insert_product(product_details, manufacturer_name):
         category=product_details['category'],
         description = product_details['description'],
         manufacturer = manufacturer,
-        spec_sheet = product_details['spec_sheet']
+        spec_sheet=product_details.get('spec_sheet')
     )
 
     # Add the Product to the session

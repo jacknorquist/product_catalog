@@ -309,8 +309,8 @@ def scrape_catalog(catalog_url=BASE_URL):
         product_details = get_product_details(link)
         all_products.append(product_details)
 
-    for product in all_product:
-        insert_product(product)
+    for product in all_products:
+        insert_product(product, 'Techo Bloc')
 
     return all_products
 

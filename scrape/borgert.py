@@ -54,8 +54,11 @@ def get_product_links(catalog_url):
         for item in sub_menu.select('.menu-item.menu-item-type-post_type'):
             link_element = item.find('a', href=True)
             if link_element:
-                product_link = urljoin(catalog_url, link_element['href'])
-                product_info.append((product_link, category_text))
+                product_link = link_element['href']
+                if product_link = 'https://www.borgertproducts.com/fireplaces-ovens-fire-rings/':
+                    return
+                else:
+                    product_info.append((product_link, category_text))
 
     driver.quit()
     return product_info
@@ -121,9 +124,20 @@ def get_product_details(product_url, category):
 
     product_details['sizes']=size_entries
 
+
+    ##Spec sheet
     s3_spec_sheet_url  = None
 
-    spec_sheet_url=
+    wait = WebDriverWait(driver, 10)
+    spec_sheet_url = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'a[rel="noopener"]'))).get_attribute('href')
+    s3_spec_sheet_url = upload_image_stream_to_s3(spec_sheet_url, s3_bucket_name, f"borgert/{product_details['name']}/spec_sheet.pdf", 'application/pdf')
+
+    product_details['spec_sheet']=s3_spec_sheet_url
+    product_details['colors'] = []
+    product_details['textures'] = []
+
+
+
 
 
     driver.quit()
@@ -138,7 +152,7 @@ def scrape_catalog(catalog_url = BASE_URL):
         all_products.append(product_details)
 
     for product in all_products:
-        insert_product(product)
+        insert_product(product, 'Borgert')
 
     return all_products
 

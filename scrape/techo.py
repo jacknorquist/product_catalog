@@ -55,7 +55,7 @@ def get_product_details(product_url):
     try:
         product_details['category'] = soup.select_one('.roc-pdp-title__product-category-text').text.strip()
     except Exception as e:
-        product_details['castegory'] = 'Misc'
+        product_details['category'] = 'Misc'
 
     size_entries = []
     colors = []

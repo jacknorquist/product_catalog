@@ -174,7 +174,7 @@ def get_product_details(product_url):
             except Exception as e:
                 print(f"Error processing texture {texture_name}: {e}")
 
-        if product_details['name'] != 'Maya' and product_details['category'] != 'Pool Coping & Wall Caps' and product_details['category'] != 'Stone Steps' and product_details['category'] != 'Garden Edging Stones':
+        if product_details['name'] != 'Maya' and product_details['category'] != 'Pool Coping & Wall Caps' and product_details['category'] != 'Stone Steps' and product_details['category'] != 'Garden Edging Stones' and product_details['name'] != 'Borealis Commercial' and product_details['name'] != 'Raffinato' and product_details['name'] != 'York' and product_details['name'] != 'Sandstone Step':
 
             # Find the container with the sizes list
             sizes_list_container = driver.find_element(By.CLASS_NAME, 'roc-pdp-selections__sizes-list')

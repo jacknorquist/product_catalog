@@ -62,7 +62,11 @@ def get_product_details(product_url):
     textures = []
     main_images=[]
 
-
+    ##close popup cookie box
+    popup_close = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, '.onetrust-close-btn-handler.onetrust-close-btn-ui.banner-close-button.ot-close-icon'))
+        )
+    popup_close.click();
 
 
 
@@ -75,11 +79,6 @@ def get_product_details(product_url):
         EC.presence_of_all_elements_located((By.CSS_SELECTOR, '.roc-pdp-selections__colors-list'))
         )
         color_items = color_list[0].find_elements(By.CSS_SELECTOR, '.roc-pdp-selections__colors-item')
-
-        popup_close = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, '.onetrust-close-btn-handler.onetrust-close-btn-ui.banner-close-button.ot-close-icon'))
-        )
-        popup_close.click();
 
         for color_item in color_items:
             color_name = color_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-name').text.strip()

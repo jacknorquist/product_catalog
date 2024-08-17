@@ -22,15 +22,15 @@ s3_bucket_name='productscatalog'
 
 
 # Base URL for the product catalog
-BASE_URL = 'https://www.countymaterials.com/en/products/landscaping/related-landscape-products'  # Replace with actual catalog URL
+BASE_URL = 'https://www.countymaterials.com/'  # Replace with actual catalog URL
 
 
-def get_product_links(links):
+def get_product_links(link, category):
     chrome_options = Options()
     service = Service('./chromedriver')
     driver = webdriver.Chrome(service=service, options=chrome_options)
 
-    driver.get(catalog_url)
+    driver.get(link)
 
     # Use WebDriverWait to wait for the page to fully load
     wait = WebDriverWait(driver, 10)
@@ -39,28 +39,20 @@ def get_product_links(links):
     html = driver.page_source
     soup = BeautifulSoup(html, 'html.parser')
 
+    products = driver.find_elements(By.CSS_SELECTOR, '.teaser-item')
+    product_links = []
+
     # List to store product links with their associated categories
-    product_info = []
+    for product in products:
+        try:
+            a_tag = product.find_element(By.CSS_SELECTOR, 'a')
+            href = a_tag.get_attribute('href')
+            if href:
+                absolute_url = urljoin(base_url, href)
+                product_links.append((absolute_url, category))
+        except Exception as e:
+            print(f"Error extracting product link: {e}")
 
-    # Iterate over each .sub-menu element
-    for category_element in categories:
-        # Find the sibling <a> element that contains the category
-        category_element.click()
-        category = category_element.find_element(By.TAG_NAME, 'h3').text.strip()
-        if category_element:
-            category_text = category_element.get_text(strip=True)
-        else:
-            category_text = 'Unknown'
-
-        # Iterate over each .menu-item.menu-item-type-post_type within this sub-menu
-        for item in sub_menu.select('.menu-item.menu-item-type-post_type'):
-            link_element = item.find('a', href=True)
-            if link_element:
-                product_link = link_element['href']
-                if product_link = 'https://www.borgertproducts.com/fireplaces-ovens-fire-rings/':
-                    return
-                else:
-                    product_info.append((product_link, category_text))
 
     driver.quit()
     return product_info
@@ -80,74 +72,73 @@ def get_product_details(product_url, category):
     # Get the initial page source
     html = driver.page_source
     soup = BeautifulSoup(html, 'html.parser')
-    base_url = 'https://www.techo-bloc.com'
+    base_url = 'https://www.countymaterials.com/'
 
     product_details = {}
-    ## Category, name, description
 
-    textWrapper=driver.find_element(By.CSS_SELECTOR,'.wpb_text_column')
-    product_details['name'] = textWrapper.find_element(By.TAG_NAME, 'h1').text.strip()
-    product_details['description'] = textWrapper.find_element(By.CSS_SELECTOR, '.content').text.strip()
+    ## Category, name, description
+    product_details['name'] = textWrapper.find_element(By.CSS_SELECTOR, '#details-title').text.strip()
+    product_details['description'] = textWrapper.find_element(By.CSS_SELECTOR, '#details-desc').text.strip()
     product_details['category'] = category
 
-
-        # List to store image URLs
+    ##images
     image_urls = []
 
-    ##images
-    vc_items = soup.find_all(class_='vc_item')
-    for item in vc_items:
-    # Find the image within this vc_item
-    img_tag = item.find('img')
-    if img_tag and 'src' in img_tag.attrs:
-        img_url = img_tag['src']
-        # Join the URL with the base URL
-        image_urls.append(img_url)
+    img_div = driver.find_element(By.CSS_SELECTOR, '.details-image')
+    img_url = img_div.find_element(By.TAG_NAME, 'img').get_attribute('src')
+    s3_img_url = upload_image_stream_to_s3(img_url, s3_bucket_name, f"county_materials/{product_details['name']}/images/main_img.jpg")
+    image_urls.append(s3_image_url)
 
-    s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"borgert/{product_details['name']}/images/main_{i}.jpg") for i, img_url in enumerate(image_urls)]
-    product_details['images'] = s3_main_images
+    product_details['images'] = image_urls
 
+
+    #colors and textures
+    colors = []
+    colors_div = driver.find_element(By.CSS_SELECTOR, '.koowa_media')
+    color_elements = driver.find_elements(By.CSS_SELECTOR, '.koowa_media__item__content document')
+
+    for color_element in color_elements:
+        color_name = color_element.find_element(By.CSS_SELECTOR, '.overflow_container').text.strip()
+        image_url = color_element.find_element(By.TAG_NAME, 'img').get_attribute('src')
+        s3_img_url = upload_image_stream_to_s3(image_url, s3_bucket_name, f"county_materials/{product_details['name']}/colors/thumbnail_img.jpg")
+        color_entry = {
+            name = color_name,
+            image_url = s3_image_url,
+            product_name = product_details['name']
+        }
+        colors.append(color_entry)
+    product_details['colors'] = colors
+
+
+    ##spec sheet
+    details_lit_div = driver.find_element(By.CSS_SELECTOR, '#details-literature')
+    literature_elements = details_lit_div.find_elements(By.CSS_SELECTOR, '.module_document')
+    spec_sheet_url = literature_elements[0].find_element(By.TAG_NAME, 'a').get_attribute('href')
+    s3_spec_sheet_url = upload_image_stream_to_s3(image_url, s3_bucket_name, f"county_materials/{product_details['name']}/spec_sheet.pdf", 'application/pdf')
+    product_details['spec_sheet'] = s3_spec_sheet_url
 
     ##size
-    size_entries=[]
-    size_items = driver.find_elements(By.CSS_SELECTOR,'.vc_clearfix')
-        for size in size_item:
-            h4_text = size.find_element(By.TAG_NAME, 'h4').text.strip()
-            lines = h4_text.split('\n')
-            name = lines[0]
-            dimensions = lines[1]
-            image_url = size.find_element(By.CSS_SELECTOR, '.vc_gitem-zone-img').get_attribute('src')
-            s3_size_image_url = upload_image_stream_to_s3(img_url, s3_bucket_name, f"borgert/{product_details['name']}/sizes/{name}.png")
+    size_entries = []
+    left_container - driver.find_element(By.CSS_SELECTOR, '.details-left')
+    size_image_url = left_container.find_element(By.TAG_NAME, 'img').get_attribute('src')
+    s3_size_image_url = upload_image_stream_to_s3(size_image_url, s3_bucket_name, f"county_materials/{product_details['name']}/sizes/{product_details['name']}.jpg")
 
-            size_entry = {
-                'name': name,
-                'image': s3_size_img_url,
-                'dimensions': dimensions
-            }
-            size_entries.append(size_entry)
+    size_entry = {
+        'name': product_details['name'],
+        'image': s3_size_img_url,
+        'dimensions': ""
+    }
+    product_details['sizes'] = size_entries
 
-    product_details['sizes']=size_entries
-
-
-    ##Spec sheet
-    s3_spec_sheet_url  = None
-
-    wait = WebDriverWait(driver, 10)
-    spec_sheet_url = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'a[rel="noopener"]'))).get_attribute('href')
-    s3_spec_sheet_url = upload_image_stream_to_s3(spec_sheet_url, s3_bucket_name, f"borgert/{product_details['name']}/spec_sheet.pdf", 'application/pdf')
-
-    product_details['spec_sheet']=s3_spec_sheet_url
-    product_details['colors'] = []
+    ##for safely inserting product
     product_details['textures'] = []
-
-
 
 
 
     driver.quit()
     return product_details
 
-def scrape_catalog(catalog_url = BASE_URL):
+def scrape_catalog():
 
     category_links = [('https://www.countymaterials.com/en/products/landscaping/retaining-walls', 'Retaining Walls'),
                         ('https://www.countymaterials.com/en/products/landscaping/pavers', 'Pavers'),
@@ -155,8 +146,10 @@ def scrape_catalog(catalog_url = BASE_URL):
                         ('https://www.countymaterials.com/en/products/landscaping/outdoor-fireplaces-fire-rings-patio-living-products/fire-pit-kits-circle-square', 'Fire Pits')]
     product_links = []
 
-    for links in category_links:
-        
+    for link, category in category_links:
+        product_details = get_product_links(link, category)
+        product_links += product_details
+
 
     all_products = []
     for link, category in product_links:
@@ -164,7 +157,7 @@ def scrape_catalog(catalog_url = BASE_URL):
         all_products.append(product_details)
 
     for product in all_products:
-        insert_product(product, 'Borgert')
+        insert_product(product, 'County Materials')
 
     return all_products
 

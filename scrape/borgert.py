@@ -63,7 +63,7 @@ def get_product_links(catalog_url):
     driver.quit()
     return product_info
 
-    
+
 def get_product_details(product_url, category):
 
     chrome_options = Options()
@@ -78,7 +78,6 @@ def get_product_details(product_url, category):
     # Get the initial page source
     html = driver.page_source
     soup = BeautifulSoup(html, 'html.parser')
-    base_url = 'https://www.techo-bloc.com'
 
     product_details = {}
     ## Category, name, description

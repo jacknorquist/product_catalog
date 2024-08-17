@@ -27,8 +27,13 @@ def get_product_links(driver):
     # Retrieve the current page source
     html = driver.page_source
     soup = BeautifulSoup(html, 'html.parser')
+
+    products = driver.finde_elements(By.CSS_SELECTOR, '.grid-item-figure')
+
+    for product in products:
+        product_link = 
     # Use the current URL to create absolute links
-    product_links = [urljoin(driver.current_url, a['href']) for a in soup.select('.techobloc-product-card__link') if 'href' in a.attrs]
+    product_links = [urljoin(driver.current_url, a['href']) for a in soup.select('.grid-item-figure') if 'href' in a.attrs]
     return product_links
     return product_links
 
@@ -130,49 +135,50 @@ def get_product_details(product_url):
         texture_list = WebDriverWait(driver, 10).until(
         EC.presence_of_all_elements_located((By.CSS_SELECTOR, '.roc-pdp-selections__colors-list'))
         )
-        texture_items = texture_list[1].find_elements(By.CSS_SELECTOR, '.roc-pdp-selections__colors-item')
+        if len(texture_list)>1:
+            texture_items = texture_list[1].find_elements(By.CSS_SELECTOR, '.roc-pdp-selections__colors-item')
 
-        for texture_item in texture_items:
-            texture_name = texture_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-name').text.strip()
-            thumbnail_img = texture_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-asset').get_attribute('src')
-            absolute_thumbnail_img_url = urljoin(base_url, thumbnail_img)
+            for texture_item in texture_items:
+                texture_name = texture_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-name').text.strip()
+                thumbnail_img = texture_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-asset').get_attribute('src')
+                absolute_thumbnail_img_url = urljoin(base_url, thumbnail_img)
 
-            # Click the texture label to show more images
-            try:
-                texture_label = texture_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-label')
-                if texture_label:
-                    wait.until(EC.element_to_be_clickable(texture_label))
-                    driver.execute_script("arguments[0].click();", texture_label)
-                    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.roc-pdp-asset-scroller__item')))
-                    time.sleep(4)  # Allow time for the images to load
+                # Click the texture label to show more images
+                try:
+                    texture_label = texture_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-label')
+                    if texture_label:
+                        wait.until(EC.element_to_be_clickable(texture_label))
+                        driver.execute_script("arguments[0].click();", texture_label)
+                        wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.roc-pdp-asset-scroller__item')))
+                        time.sleep(4)  # Allow time for the images to load
 
-                    # Collect main images
-                    main_images = []
-                    img_items = driver.find_elements(By.CSS_SELECTOR, '.roc-pdp-asset-scroller__button roc-pdp-asset-scroller__button--active')
-                    for img_item in img_items:
-                        img_item.click()
-                        try:
-                            main_image_element = WebDriverWait(driver, 10).until(
-                                EC.visibility_of_element_located((By.CSS_SELECTOR, '.roc-pdp-main-image__image.roc-lazy-image--loaded'))
-                            )
-                            img_url = main_image_element.get_attribute('src')
-                            main_images.append(urljoin(base_url, img_url))
-                        except Exception as e:
-                            print(f"Error processing image item: {e}")
+                        # Collect main images
+                        main_images = []
+                        img_items = driver.find_elements(By.CSS_SELECTOR, '.roc-pdp-asset-scroller__button roc-pdp-asset-scroller__button--active')
+                        for img_item in img_items:
+                            img_item.click()
+                            try:
+                                main_image_element = WebDriverWait(driver, 10).until(
+                                    EC.visibility_of_element_located((By.CSS_SELECTOR, '.roc-pdp-main-image__image.roc-lazy-image--loaded'))
+                                )
+                                img_url = main_image_element.get_attribute('src')
+                                main_images.append(urljoin(base_url, img_url))
+                            except Exception as e:
+                                print(f"Error processing image item: {e}")
 
-                    # Upload thumbnail and main images
-                    s3_thumbnail_img_url = upload_image_stream_to_s3(absolute_thumbnail_img_url, s3_bucket_name, f"techo/{product_name}/textures/{texture_name}_thumbnail.jpg")
-                    s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"techo/{product_name}/textures/{texture_name}_main_{i}.jpg") for i, img_url in enumerate(main_images)]
+                        # Upload thumbnail and main images
+                        s3_thumbnail_img_url = upload_image_stream_to_s3(absolute_thumbnail_img_url, s3_bucket_name, f"techo/{product_name}/textures/{texture_name}_thumbnail.jpg")
+                        s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"techo/{product_name}/textures/{texture_name}_main_{i}.jpg") for i, img_url in enumerate(main_images)]
 
-                    textures.append({
-                        'name': texture_name,
-                        'thumbnail_image_url': s3_thumbnail_img_url,
-                        'main_images': s3_main_images
-                    })
-                else:
-                    print(f"Texture label for {texture_name} not found.")
-            except Exception as e:
-                print(f"Error processing texture {texture_name}: {e}")
+                        textures.append({
+                            'name': texture_name,
+                            'thumbnail_image_url': s3_thumbnail_img_url,
+                            'main_images': s3_main_images
+                        })
+                    else:
+                        print(f"Texture label for {texture_name} not found.")
+                except Exception as e:
+                    print(f"Error processing texture {texture_name}: {e}")
 
         # if product_details['name'] != 'Maya' and product_details['category'] != 'Pool Coping & Wall Caps' and product_details['category'] != 'Stone Steps' and product_details['category'] != 'Garden Edging Stones' and product_details['name'] != 'Borealis Commercial' and product_details['name'] != 'Raffinato' and product_details['name'] != 'York' and product_details['name'] != 'Sandstone Step' and product_details['category'] != 'Pool Coping' and product_details['category'] != 'Wall Cap' and product_details['category'] != 'Fire Pits and Burners':
             sizes_list_container = driver.find_elements(By.CLASS_NAME, 'roc-pdp-selections__sizes-list')

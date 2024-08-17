@@ -7,6 +7,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
 from urllib.parse import urljoin
 import time
 import sys
@@ -21,10 +22,10 @@ s3_bucket_name='productscatalog'
 
 
 # Base URL for the product catalog
-BASE_URL = 'https://www.borgertproducts.com/'  # Replace with actual catalog URL
+BASE_URL = 'https://www.countymaterials.com/en/products/landscaping/related-landscape-products'  # Replace with actual catalog URL
 
 
-def get_product_links(catalog_url):
+def get_product_links(links):
     chrome_options = Options()
     service = Service('./chromedriver')
     driver = webdriver.Chrome(service=service, options=chrome_options)
@@ -42,9 +43,10 @@ def get_product_links(catalog_url):
     product_info = []
 
     # Iterate over each .sub-menu element
-    for sub_menu in soup.select('.sub-menu'):
+    for category_element in categories:
         # Find the sibling <a> element that contains the category
-        category_element = sub_menu.find_previous_sibling('a')
+        category_element.click()
+        category = category_element.find_element(By.TAG_NAME, 'h3').text.strip()
         if category_element:
             category_text = category_element.get_text(strip=True)
         else:
@@ -63,7 +65,7 @@ def get_product_links(catalog_url):
     driver.quit()
     return product_info
 
-    
+
 def get_product_details(product_url, category):
 
     chrome_options = Options()
@@ -146,7 +148,15 @@ def get_product_details(product_url, category):
     return product_details
 
 def scrape_catalog(catalog_url = BASE_URL):
-    product_links = get_product_links(catalog_url)
+
+    category_links = [('https://www.countymaterials.com/en/products/landscaping/retaining-walls', 'Retaining Walls'),
+                        ('https://www.countymaterials.com/en/products/landscaping/pavers', 'Pavers'),
+                        ('https://www.countymaterials.com/en/products/landscaping/outdoor-fireplaces-fire-rings-patio-living-products/step-units', 'Steps'),
+                        ('https://www.countymaterials.com/en/products/landscaping/outdoor-fireplaces-fire-rings-patio-living-products/fire-pit-kits-circle-square', 'Fire Pits')]
+    product_links = []
+
+    for links in category_links:
+        
 
     all_products = []
     for link, category in product_links:

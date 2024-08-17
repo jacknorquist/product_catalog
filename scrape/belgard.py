@@ -174,51 +174,47 @@ def get_product_details(product_url):
             except Exception as e:
                 print(f"Error processing texture {texture_name}: {e}")
 
-        # if product_details['name'] != 'Maya' and product_details['category'] != 'Pool Coping & Wall Caps' and product_details['category'] != 'Stone Steps' and product_details['category'] != 'Garden Edging Stones' and product_details['name'] != 'Borealis Commercial' and product_details['name'] != 'Raffinato' and product_details['name'] != 'York' and product_details['name'] != 'Sandstone Step' and product_details['category'] != 'Pool Coping' and product_details['category'] != 'Wall Cap' and product_details['category'] != 'Fire Pits and Burners':
-            sizes_list_container = driver.find_elements(By.CLASS_NAME, 'roc-pdp-selections__sizes-list')
+        if product_details['name'] != 'Maya' and product_details['category'] != 'Pool Coping & Wall Caps' and product_details['category'] != 'Stone Steps' and product_details['category'] != 'Garden Edging Stones' and product_details['name'] != 'Borealis Commercial' and product_details['name'] != 'Raffinato' and product_details['name'] != 'York' and product_details['name'] != 'Sandstone Step' and product_details['category'] != 'Pool Coping' and product_details['category'] != 'Wall Cap' and product_details['category'] != 'Fire Pits and Burners':
+
             # Find the container with the sizes list
+            sizes_list_container = driver.find_element(By.CLASS_NAME, 'roc-pdp-selections__sizes-list')
 
             # Find all size items within the container
-            if len(sizes_list_container)>0:
-                size_items = sizes_list_container[0].find_elements(By.CLASS_NAME, 'roc-pdp-selections__sizes-item')
-                # Initialize a list to store the size entries
+            size_items = sizes_list_container.find_elements(By.CLASS_NAME, 'roc-pdp-selections__sizes-item')
+            # Initialize a list to store the size entries
 
-                # Loop through each size item to extract information
-                for size_item in size_items:
-                    size_img = size_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__sizes-asset').get_attribute('src')
-                    absolute_size_img_url = urljoin(base_url, size_img)
+            # Loop through each size item to extract information
+            for size_item in size_items:
+                size_img = size_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__sizes-asset').get_attribute('src')
+                absolute_size_img_url = urljoin(base_url, size_img)
 
-                    name = size_item.find_element(By.CSS_SELECTOR,'.roc-pdp-selections__sizes-product').text.strip()
-                    # Find and extract all DIMENSIONS
-                    dimension_elements = size_item.find_elements(By.CLASS_NAME, 'roc-pdp-selections__sizes-size')
-                    if dimension_elements:
-                        dimensions = [dim.text.strip() for dim in dimension_elements]
-                    else:
-                        dimensions = ""
-                    s3_size_img_url = upload_image_stream_to_s3(absolute_size_img_url, s3_bucket_name, f"techo/{product_name}/sizes/{name}.png")
+                name = size_item.find_element(By.CSS_SELECTOR,'.roc-pdp-selections__sizes-product').text.strip()
+                # Find and extract all DIMENSIONS
+                dimension_elements = size_item.find_elements(By.CLASS_NAME, 'roc-pdp-selections__sizes-size')
+                if dimension_elements:
+                    dimensions = [dim.text.strip() for dim in dimension_elements]
+                s3_size_img_url = upload_image_stream_to_s3(absolute_size_img_url, s3_bucket_name, f"techo/{product_name}/sizes/{name}.png")
 
-                    # Construct the size entry dictionary
-                    size_entry = {
-                        'name': name,
-                        'image': s3_size_img_url,
-                        'dimensions': dimensions
-                    }
+                # Construct the size entry dictionary
+                size_entry = {
+                    'name': name,
+                    'image': s3_size_img_url,
+                    'dimensions': dimensions
+                }
 
-                    # Add the size entry to the list
-                    size_entries.append(size_entry)
-            try:
-                iframe = WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, 'iframe#hubspot-conversations-iframe'))
-                )
-                driver.switch_to.frame(iframe)
-                assist_close = WebDriverWait(driver, 10).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, '.VizExIconButton__AbstractVizExIconButton-rat7tt-0'))
-                )
-                assist_close.click();
+                # Add the size entry to the list
+                size_entries.append(size_entry)
 
-                driver.switch_to.default_content()
-            except Exception as e:
-                print("iframe not found")
+            iframe = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, 'iframe#hubspot-conversations-iframe'))
+            )
+            driver.switch_to.frame(iframe)
+            assist_close = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, '.VizExIconButton__AbstractVizExIconButton-rat7tt-0'))
+            )
+            assist_close.click();
+
+            driver.switch_to.default_content()
 
             spec_button = driver.find_elements(By.CSS_SELECTOR, '#tab-toggle-65e9a191-5747-4a63-09d6-08dc9f5470cb')
             if len(spec_button)> 0:
@@ -247,14 +243,11 @@ def get_product_details(product_url):
 
                     # Upload thumbnail and main images
             main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"techo/{product_name}/images/main_{i}.jpg") for i, img_url in enumerate(images)]
-    try:
-        descriptionDiv = driver.find_element(By.CSS_SELECTOR, '#tab-description-description')
-        descriptionButton = descriptionDiv.find_element(By.CSS_SELECTOR, '.roc-pdp-sections__accordion-button')
-        driver.execute_script("arguments[0].click();", descriptionButton)
-        description = descriptionDiv.find_element(By.CSS_SELECTOR, '.roc-pdp-sections__accordion-body').text.strip()
-    except Exception as e:
-        print('Description not found')
-        description ="Coming Soon"
+
+    descriptionDiv = driver.find_element(By.CSS_SELECTOR, '#tab-description-description')
+    descriptionButton = descriptionDiv.find_element(By.CSS_SELECTOR, '.roc-pdp-sections__accordion-button')
+    driver.execute_script("arguments[0].click();", descriptionButton)
+    description = descriptionDiv.find_element(By.CSS_SELECTOR, '.roc-pdp-sections__accordion-body').text.strip()
 ##dont need main images right now
     # for img in driver.find_elements(By.CSS_SELECTOR, '.roc-pdp-asset-scroller__image'):
     #     img_url = img.get_attribute('src')

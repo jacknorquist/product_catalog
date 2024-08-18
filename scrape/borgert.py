@@ -146,6 +146,7 @@ def get_product_details(product_url, category):
 
 def scrape_catalog(catalog_url = BASE_URL):
     product_links = get_product_links(catalog_url)
+    print(product_links)
 
     all_products = []
     for link, category in product_links:

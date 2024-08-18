@@ -27,13 +27,8 @@ def get_product_links(driver):
     # Retrieve the current page source
     html = driver.page_source
     soup = BeautifulSoup(html, 'html.parser')
-
-    products = driver.finde_elements(By.CSS_SELECTOR, '.grid-item-figure')
-
-    for product in products:
-        product_link = 
     # Use the current URL to create absolute links
-    product_links = [urljoin(driver.current_url, a['href']) for a in soup.select('.grid-item-figure') if 'href' in a.attrs]
+    product_links = [urljoin(driver.current_url, a['href']) for a in soup.select('.techobloc-product-card__link') if 'href' in a.attrs]
     return product_links
     return product_links
 
@@ -77,7 +72,7 @@ def get_product_details(product_url):
 
 
 
-    if product_details['category'] != 'Accessories' and product_details['name'] != 'Breeo - Zentro Smokeless Steel Insert' and product_details['category'] != 'Misc':
+    if product_details['category'] != 'Accessories' and product_details['name'] != 'Breeo - Zentro Smokeless Steel Insert' and product_details['category'] != 'Misc' and product_details['category'] != 'Outdoor Kitchens':
         # Use Selenium to interact with elements
         # color_list = driver.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-list')  # First instance for colors
         color_list = WebDriverWait(driver, 10).until(

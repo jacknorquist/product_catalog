@@ -7,7 +7,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 import time
 import sys
 import os
@@ -27,9 +27,16 @@ def get_product_links(driver):
     # Retrieve the current page source
     html = driver.page_source
     soup = BeautifulSoup(html, 'html.parser')
-    # Use the current URL to create absolute links
-    product_links = [urljoin(driver.current_url, a['href']) for a in soup.select('.techobloc-product-card__link') if 'href' in a.attrs]
-    return product_links
+
+    product_links = []
+
+    product_divs = driver.find_elements(By.CSS_SELECTOR, '.grid-item-figure')
+
+
+    for product in product_divs:
+        link = product.find_element(By.TAG_NAME, 'a').get_attribute('href')
+        product_links.append(link)
+
     return product_links
 
 def get_product_details(product_url):
@@ -49,13 +56,48 @@ def get_product_details(product_url):
     base_url = 'https://www.techo-bloc.com'
     s3_spec_sheet_url = None
     product_details = {}
-    product_name = soup.select_one('.roc-pdp-title__product-name').text.strip()
+
+    ##name
+    product_name =  driver.find_element(By.CSS_SELECTOR, '.details__title').text.strip()
     product_details['name'] = product_name
-    print(product_name, 'product nameeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee')
-    try:
-        product_details['category'] = soup.select_one('.roc-pdp-title__product-category-text').text.strip()
-    except Exception as e:
-        product_details['category'] = 'Misc'
+
+    ##category
+    parsed_url = urlparse(url)
+    path = parsed_url.path
+    segments = path.strip('/').split('/')
+    if len(segments) >= 3:
+        category = segments[2]
+        product_details['category'] = category
+    else:
+        return product_details['category'] = ""
+
+
+
+    details_div = driver.find_element(By.CSS_SELECTOR, '.details')
+
+    ##description
+    description_div = details_div.find_element(By.CSS_SELECTOR, '.details-text')
+    description = description_div.find_element(By.TAG_NAME, 'p').text.strip()
+    product_details['description'] = description
+
+
+    ##colors
+    colors = []
+    colors_div = driver.find_element(By.CSS_SELECTOR, '.details__section details__section--colors')
+    colors = colors_div.find_elements(By.CSS_SELECTOR, '.details__color')
+
+    for color in colors:
+        name = color.find_element(By.CSS_SELECTOR, '.details__color__title').text.strip()
+        thumbnail_image_url = color.find_element(By.TAG_NAME, 'img').get_attribute('src')
+        s3_img_url = upload_image_stream_to_s3(thumbnail_image_url, s3_bucket_name, f"belgard/{product_details['name']}/colors/{name}_.jpg")
+
+        color_entry ={
+            name = name,
+            thumbnail_image_url = s3_image_url
+        }
+        colors.append(color_entry)
+
+
 
     size_entries = []
     colors = []
@@ -287,7 +329,7 @@ def scrape_catalog(catalog_url=BASE_URL):
 
     product_links = []
     page_number = 1
-    max_pages = 11
+    max_pages = 10
 
     while page_number <= max_pages:
         # Extract product links from the current page
@@ -297,7 +339,7 @@ def scrape_catalog(catalog_url=BASE_URL):
         # Check for the "Next" button and handle pagination
         try:
             next_button = wait.until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, '.hawk-pagination__item.hawk-pagination__item--right'))  # Adjust selector as needed
+                EC.element_to_be_clickable((By.CSS_SELECTOR, '.facetwp-page arrow-next'))  # Adjust selector as needed
             )
             next_button.click()
             time.sleep(2)  # Wait for the page to load and new URL to be set

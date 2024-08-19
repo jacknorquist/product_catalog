@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Index
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Index, Boolean
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.ext.declarative import declarative_base
@@ -62,6 +62,7 @@ class Color(Base):
     name = Column(String, nullable=False)
     image_url = Column(String, nullable=False)  # Thumbnail URL
     product = relationship('Product', back_populates='colors')
+    accent_color = Column(Boolean, default=False)
     color_images = relationship('ProductImage', back_populates='color') # Link to ProductImage model
 
 # Define the Texture model

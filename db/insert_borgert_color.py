@@ -22,6 +22,7 @@ def insert_borgert_color(color):
         product_id=product.id,
         name=color['name'],
         image_url=color['thumbnail_image_url']
+        accent_color = color['accent_color']
     )
     session.add(color_entry)
     session.commit()

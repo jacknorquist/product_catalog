@@ -22,7 +22,8 @@ s3_bucket_name='productscatalog'
 
 
 # Base URL for the product catalog
-BASE_URL = 'https://www.borgertproducts.com/'  # Replace with actual catalog URL
+PRODUCTS_URL = 'https://rochestercp.com/products'
+BASE_URL = 'https://rochestercp.com/'  # Replace with actual catalog URL
 
 
 def get_product_links(catalog_url):
@@ -49,16 +50,15 @@ def get_product_links(catalog_url):
     # List to store product links with their associated categories
     product_info = []
 
-    menu_items = product_menu.find_elements(By.CSS_SELECTOR, '.menu-item-type-custom')
+    category_divs = driver.find_elements(By.CSS_SELECTOR, '.container-fluid.category-header')
 
     # Iterate over each .sub-menu element
-    for product_item in menu_items:
-        actions = ActionChains(driver)
-        actions.move_to_element(product_item).perform()
-        # Find the sibling <a> element that contains the category
-        category_text = product_item.find_element(By.TAG_NAME, 'a').text.strip()
-        for link_div in product_item.find_elements(By.CSS_SELECTOR, '.menu-item-type-post_type'):
-            product_link = link_div.find_element(By.TAG_NAME, 'a').get_attribute('href')
+    for category_div in category_divs:
+        category_text = category_div.find_element(By.TAG_NAME, 'h1').text.strip()
+        product_divs = category_div.find_elements(By.CSS_SELECTOR, '.item')
+        for product_div in product_divs:
+            product_link = product_div.find_element(By.TAG_NAME, 'a').get_attribute('href')
+            absolute_product_link = urljoin(base_url, product_link)
             product_info.append((product_link, category_text))
 
     driver.quit()
@@ -164,7 +164,7 @@ def get_product_details(product_url, category):
     driver.quit()
     return product_details
 
-def scrape_catalog(catalog_url = BASE_URL):
+def scrape_catalog(products_url = PRODUCTS_URL):
     product_links = get_product_links(catalog_url)
 
     all_products = []
@@ -173,7 +173,7 @@ def scrape_catalog(catalog_url = BASE_URL):
         all_products.append(product_details)
 
     for product in all_products:
-        insert_product(product, 'Borgert')
+        insert_product(product, 'Rochester Concrete Products')
 
     return all_products
 

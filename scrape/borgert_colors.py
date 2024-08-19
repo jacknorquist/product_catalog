@@ -41,13 +41,18 @@ def get_colors():
         image_url = color.find_element(By.TAG_NAME, 'img').get_attribute('src')
         product_name = color.find_element(By.TAG_NAME, 'strong').text.strip()
         description = color.find_element(By.CSS_SELECTOR, 'item-meta').text.strip()
-        
+        if "Accent Color" in description:
+            accent_color = True
+        else:
+            accent_color = False
+
         s3_img_url = upload_image_stream_to_s3(image_url, s3_bucket_name, f"borgert/{product_name}/colors/{name}_.jpg")
 
         color_entry = {
             name = name,
             image_url = s3_image_url,
-            product_name = product_name
+            product_name = product_name,
+            accent_color = accent_color
         }
         colors.append(color_entry)
 

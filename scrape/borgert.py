@@ -85,11 +85,15 @@ def get_product_details(product_url, category):
 
     textWrapper=driver.find_element(By.CSS_SELECTOR,'.wpb_text_column')
     product_details['name'] = textWrapper.find_element(By.TAG_NAME, 'h1').text.strip()
+    product_details['name'] = product_details['name'].replace('(Tumbled)', '').strip()
     if product_details['name'] == 'Fireplaces, Ovens & Fire Rings':
         return
     print(product_details['name'])
     content = textWrapper.find_element(By.CSS_SELECTOR, '.content')
-    product_details['description'] = content.find_element(By.TAG_NAME, 'p').text.strip()
+    try:
+        product_details['description'] = content.find_element(By.TAG_NAME, 'p').text.strip()
+    except Exception as e:
+        produc_details['description'] = "Coming Soon"
     product_details['category'] = category
 
 
@@ -111,8 +115,10 @@ def get_product_details(product_url, category):
 
 
     ##size
+    wrapper_divs = driver.find_elements(By.CSS_SELECTOR, '.vc_row.wpb_row.vc_row-fluid')
+    # container_div = wrapper_divs[3].find_element(By.CSS_SELECTOR, 'vc_grid-container')
     size_entries=[]
-    size_div = driver.find_element(By.CSS_SELECTOR, '.vc_grid')
+    size_div = wrapper_divs[3].find_element(By.CSS_SELECTOR, '.vc_grid')
     size_items = size_div.find_elements(By.CSS_SELECTOR,'.vc_grid-item')
     for size in size_items:
         h4_text = size.find_element(By.TAG_NAME, 'h4').text.strip()

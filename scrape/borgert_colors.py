@@ -40,6 +40,8 @@ def get_colors():
         name = name_div.find_element(By.TAG_NAME, 'a').text.strip()
         image_url = color.find_element(By.TAG_NAME, 'img').get_attribute('src')
         product_name = color.find_element(By.TAG_NAME, 'strong').text.strip()
+        description = color.find_element(By.CSS_SELECTOR, 'item-meta').text.strip()
+        
         s3_img_url = upload_image_stream_to_s3(image_url, s3_bucket_name, f"borgert/{product_name}/colors/{name}_.jpg")
 
         color_entry = {

@@ -88,7 +88,8 @@ def get_product_details(product_url, category):
     if product_details['name'] == 'Fireplaces, Ovens & Fire Rings':
         return
     print(product_details['name'])
-    product_details['description'] = textWrapper.find_element(By.CSS_SELECTOR, '.content').text.strip()
+    content = textWrapper.find_element(By.CSS_SELECTOR, '.content')
+    product_details['description'] = content.find_element(By.TAG_NAME, 'p').text.strip()
     product_details['category'] = category
 
 

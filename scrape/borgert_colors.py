@@ -11,6 +11,8 @@ from urllib.parse import urljoin
 import time
 import sys
 import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
+from db.insert_borgert_color import insert_borgert_color
 
 
 s3_bucket_name='productscatalog'
@@ -27,6 +29,7 @@ def get_colors():
 
     # Get the initial page source
     html = driver.page_source
+    driver.maximize_window()
     soup = BeautifulSoup(html, 'html.parser')
 
 
@@ -36,29 +39,37 @@ def get_colors():
     color_divs = driver.find_elements(By.CSS_SELECTOR, '.item')
 
     for color in color_divs:
-        name_div=colr.find_element(By.CSS_SELECTOR, '.item-title')
+        driver.execute_script("arguments[0].scrollIntoView(true);", color)
+        time.sleep(1)
+        name_div=color.find_element(By.CSS_SELECTOR, '.item-title')
         name = name_div.find_element(By.TAG_NAME, 'a').text.strip()
-        image_url = color.find_element(By.TAG_NAME, 'img').get_attribute('src')
+        print(name)
+        image_div = color.find_element(By.CSS_SELECTOR, '.item-image')
+
+        image_url = image_div.find_element(By.TAG_NAME, 'img').get_attribute('src')
+
+
+        print(image_url)
         product_name = color.find_element(By.TAG_NAME, 'strong').text.strip()
-        description = color.find_element(By.CSS_SELECTOR, 'item-meta').text.strip()
+        description = color.find_element(By.CSS_SELECTOR, '.item-meta').text.strip()
         if "Accent Color" in description:
             accent_color = True
         else:
             accent_color = False
 
-        s3_img_url = upload_image_stream_to_s3(image_url, s3_bucket_name, f"borgert/{product_name}/colors/{name}_.jpg")
+        s3_image_url = upload_image_stream_to_s3(image_url, s3_bucket_name, f"borgert/{product_name}/colors/{name}_.jpg")
+
 
         color_entry = {
-            name = name,
-            image_url = s3_image_url,
-            product_name = product_name,
-            accent_color = accent_color
+            'name':name,
+            'thumbnail_image_url':s3_image_url,
+            'product_name':product_name,
+            'accent_color':accent_color
         }
         colors.append(color_entry)
 
 
     driver.quit()
-
-    for color in colors:
-        insert_borgert_color(color)
+    insert_borgert_color(colors)
     return
+

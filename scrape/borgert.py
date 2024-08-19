@@ -88,6 +88,8 @@ def get_product_details(product_url, category):
     product_details['name'] = product_details['name'].replace(' (Tumbled)', '').strip()
     product_details['name'] = product_details['name'].replace(' – Untumbled', '').strip()
     product_details['name'] = product_details['name'].replace(' – Curved & Straight Face', '').strip()
+    product_details['name'] = product_details['name'].replace(' | Textured & Smooth', '').strip()
+
     if product_details['name'] == 'Fireplaces, Ovens & Fire Rings':
         return
     print(product_details['name'])

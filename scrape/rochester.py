@@ -83,19 +83,18 @@ def get_product_details(product_url, category):
     product_details = {}
     ## Category, name, description
 
-    textWrapper=driver.find_element(By.CSS_SELECTOR,'.wpb_text_column')
-    product_details['name'] = textWrapper.find_element(By.TAG_NAME, 'h1').text.strip()
-    product_details['name'] = product_details['name'].replace(' (Tumbled)', '').strip()
-    product_details['name'] = product_details['name'].replace(' – Untumbled', '').strip()
-    product_details['name'] = product_details['name'].replace(' – Curved & Straight Face', '').strip()
-    if product_details['name'] == 'Fireplaces, Ovens & Fire Rings':
-        return
-    print(product_details['name'])
-    content = textWrapper.find_element(By.CSS_SELECTOR, '.content')
     try:
-        product_details['description'] = content.find_element(By.TAG_NAME, 'p').text.strip()
+        product_details['name'] =driver.find_element(By.XPATH, '//div[@class="breadcrumbs"]//h1').text.strip()
     except Exception as e:
-        product_details['description'] = "Description Coming Soon"
+        print('didnt get name')
+        product_details['name'] = "Description Coming Soon"
+
+    try:
+        product['description'] = driver.find_element(By.CSS_SELECTOR, '.lead').text.strip()
+    except Exception as e:
+        print('didnt get details')
+        product['description'] = "Description Coming Soon"
+
     product_details['category'] = category
 
 

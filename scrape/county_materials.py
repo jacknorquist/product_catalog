@@ -9,6 +9,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from urllib.parse import urljoin
+from read_svg import upload_base64_png_to_s3_from_svg
 import time
 import sys
 import os
@@ -34,7 +35,7 @@ def get_product_links(link, category):
 
     # Use WebDriverWait to wait for the page to fully load
     wait = WebDriverWait(driver, 10)
-    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.sub-menu')))
+    # wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.sub-menu')))
 
     html = driver.page_source
     soup = BeautifulSoup(html, 'html.parser')
@@ -45,17 +46,18 @@ def get_product_links(link, category):
     # List to store product links with their associated categories
     for product in products:
         try:
-            a_tag = product.find_element(By.CSS_SELECTOR, 'a')
+            a_parent = product.find_element(By.CSS_SELECTOR, '.pos-media.media-right')
+            a_tag = a_parent.find_element(By.CSS_SELECTOR, 'a')
             href = a_tag.get_attribute('href')
             if href:
-                absolute_url = urljoin(base_url, href)
+                absolute_url = urljoin(BASE_URL, href)
                 product_links.append((absolute_url, category))
         except Exception as e:
             print(f"Error extracting product link: {e}")
 
 
     driver.quit()
-    return product_info
+    return product_links
 
 
 def get_product_details(product_url, category):
@@ -68,64 +70,87 @@ def get_product_details(product_url, category):
     # Use WebDriverWait to wait for the page to fully load
     wait = WebDriverWait(driver, 10)
 
+    driver.maximize_window()
+
 
     # Get the initial page source
     html = driver.page_source
     soup = BeautifulSoup(html, 'html.parser')
-    base_url = 'https://www.countymaterials.com/'
+    base_url = 'https://www.countymaterials.com'
 
     product_details = {}
 
+
+
     ## Category, name, description
+
+    main_wrapper = driver.find_element(By.CSS_SELECTOR, '#g-container-main')
+    main_div = main_wrapper.find_element(By.TAG_NAME, 'main')
+    item = main_div.find_element(By.CSS_SELECTOR, '.item')
+    textWrapper = item.find_element(By.CSS_SELECTOR, '#product-details')
     product_details['name'] = textWrapper.find_element(By.CSS_SELECTOR, '#details-title').text.strip()
     product_details['description'] = textWrapper.find_element(By.CSS_SELECTOR, '#details-desc').text.strip()
     product_details['category'] = category
 
+    print(product_details['name'])
+
     ##images
     image_urls = []
+    g_divs = textWrapper.find_elements(By.CSS_SELECTOR, '.g-grid')
+    right_div = g_divs[2].find_element(By.CSS_SELECTOR, '#details-right')
+    img_div = right_div.find_element(By.CSS_SELECTOR, '#details-image')
+    img_urls = img_div.find_elements(By.TAG_NAME, 'img')
+    for img_url in img_urls:
+        image_urls.append(img_url.get_attribute('src'))
 
-    img_div = driver.find_element(By.CSS_SELECTOR, '.details-image')
-    img_url = img_div.find_element(By.TAG_NAME, 'img').get_attribute('src')
-    s3_img_url = upload_image_stream_to_s3(img_url, s3_bucket_name, f"county_materials/{product_details['name']}/images/main_img.jpg")
-    image_urls.append(s3_image_url)
+    s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"county_materials/{product_details['name']}/images/main_img_{i}.jpg") for i, img_url in enumerate(image_urls)]
 
-    product_details['images'] = image_urls
+    product_details['images'] = s3_main_images
 
 
     #colors and textures
     colors = []
-    colors_div = driver.find_element(By.CSS_SELECTOR, '.koowa_media')
-    color_elements = driver.find_elements(By.CSS_SELECTOR, '.koowa_media__item__content document')
+    try:
+        colors_div = driver.find_element(By.CSS_SELECTOR, '.koowa_media')
+        color_elements = colors_div.find_elements(By.CSS_SELECTOR, '.koowa_media__item')
+        for color_element in color_elements:
+            content_holder = color_element.find_element(By.CSS_SELECTOR, '.koowa_media__item__content-holder')
+            color_name =content_holder.find_element(By.CSS_SELECTOR, '.koowa_header.koowa_media__item__label').text.strip()
+            image_url = content_holder.find_element(By.TAG_NAME, 'img').get_attribute('src')
+            s3_img_url = upload_image_stream_to_s3(image_url, s3_bucket_name, f"county_materials/{product_details['name']}/colors/{color_name}_thumbnail_img.jpg")
+            color_entry = {
+                'name':color_name,
+                'thumbnail_image_url':s3_image_url,
+                'product_name':product_details['name']
+            }
+            colors.append(color_entry)
+    except Exception as e:
+        print('in size error')
+        product_details['colors'] = colors
 
-    for color_element in color_elements:
-        color_name = color_element.find_element(By.CSS_SELECTOR, '.overflow_container').text.strip()
-        image_url = color_element.find_element(By.TAG_NAME, 'img').get_attribute('src')
-        s3_img_url = upload_image_stream_to_s3(image_url, s3_bucket_name, f"county_materials/{product_details['name']}/colors/thumbnail_img.jpg")
-        color_entry = {
-            name = color_name,
-            image_url = s3_image_url,
-            product_name = product_details['name']
-        }
-        colors.append(color_entry)
     product_details['colors'] = colors
 
 
     ##spec sheet
-    details_lit_div = driver.find_element(By.CSS_SELECTOR, '#details-literature')
-    literature_elements = details_lit_div.find_elements(By.CSS_SELECTOR, '.module_document')
-    spec_sheet_url = literature_elements[0].find_element(By.TAG_NAME, 'a').get_attribute('href')
-    s3_spec_sheet_url = upload_image_stream_to_s3(image_url, s3_bucket_name, f"county_materials/{product_details['name']}/spec_sheet.pdf", 'application/pdf')
-    product_details['spec_sheet'] = s3_spec_sheet_url
+    # details_lit_div = driver.find_element(By.CSS_SELECTOR, '#details-literature')
+    # literature_elements = details_lit_div.find_elements(By.CSS_SELECTOR, '.module_document')
+    # spec_sheet_url = literature_elements[0].find_element(By.TAG_NAME, 'a').get_attribute('href')
+    # spec_sheet_url += "/file"
+    # absolute_spec_sheet_url = urljoin(base_url, spec_sheet_url)
+    # s3_spec_sheet_url = upload_image_stream_to_s3(absolute_spec_sheet_url, s3_bucket_name, f"county_materials/{product_details['name']}/spec_sheet.pdf", 'application/pdf')
+
+    product_details['spec_sheet'] = ""
 
     ##size
     size_entries = []
-    left_container - driver.find_element(By.CSS_SELECTOR, '.details-left')
+    left_container = driver.find_element(By.CSS_SELECTOR, '#details-left')
     size_image_url = left_container.find_element(By.TAG_NAME, 'img').get_attribute('src')
-    s3_size_image_url = upload_image_stream_to_s3(size_image_url, s3_bucket_name, f"county_materials/{product_details['name']}/sizes/{product_details['name']}.jpg")
+    absolute_size_image_url = urljoin(base_url, size_image_url)
+    s3_size_image_url = upload_base64_png_to_s3_from_svg(absolute_size_image_url, s3_bucket_name, f"county_materials/{product_details['name']}/sizes/{product_details['name']}.svg"),
 
     size_entry = {
         'name': product_details['name'],
-        'image': s3_size_img_url,
+        'image': s3_size_image_url,
         'dimensions': ""
     }
     product_details['sizes'] = size_entries

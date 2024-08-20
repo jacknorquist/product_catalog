@@ -9,7 +9,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from urllib.parse import urljoin
-from read_svg import upload_base64_png_to_s3_from_svg
+from read_svg import upload_svg_as_png_to_s3
 import time
 import sys
 import os
@@ -125,7 +125,7 @@ def get_product_details(product_url, category):
             }
             colors.append(color_entry)
     except Exception as e:
-        print('in size error')
+        print('in color error')
         product_details['colors'] = colors
 
     product_details['colors'] = colors
@@ -144,9 +144,17 @@ def get_product_details(product_url, category):
     ##size
     size_entries = []
     left_container = driver.find_element(By.CSS_SELECTOR, '#details-left')
-    size_image_url = left_container.find_element(By.TAG_NAME, 'img').get_attribute('src')
+    description = left_container.find_element(By.CSS_SELECTOR, '#details-desc')
+    images = description.find_elements(By.TAG_NAME, 'img')
+    for img in images:
+        img_url = img.get_attribute('src')
+        if img_url and ("Sizes" in img_url or "sizes" in img_url):
+            size_image_url = img_url
+            break
+
     absolute_size_image_url = urljoin(base_url, size_image_url)
-    s3_size_image_url = upload_base64_png_to_s3_from_svg(absolute_size_image_url, s3_bucket_name, f"county_materials/{product_details['name']}/sizes/{product_details['name']}.svg"),
+    print(absolute_size_image_url)
+    s3_size_image_url = upload_svg_as_png_to_s3(absolute_size_image_url, s3_bucket_name, f"county_materials/{product_details['name']}/sizes/{product_details['name']}.png"),
 
     size_entry = {
         'name': product_details['name'],

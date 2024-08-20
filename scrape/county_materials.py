@@ -115,9 +115,11 @@ def get_product_details(product_url, category):
         color_elements = colors_div.find_elements(By.CSS_SELECTOR, '.koowa_media__item')
         for color_element in color_elements:
             content_holder = color_element.find_element(By.CSS_SELECTOR, '.koowa_media__item__content-holder')
-            color_name =content_holder.find_element(By.CSS_SELECTOR, '.koowa_header.koowa_media__item__label').text.strip()
-            image_url = content_holder.find_element(By.TAG_NAME, 'img').get_attribute('src')
-            s3_img_url = upload_image_stream_to_s3(image_url, s3_bucket_name, f"county_materials/{product_details['name']}/colors/{color_name}_thumbnail_img.jpg")
+            label_holder =content_holder.find_element(By.CSS_SELECTOR, '.koowa_header.koowa_media__item__label')
+            color_name = label_holder.find_element(By.CSS_SELECTOR, '.overflow_container').text.strip()
+            thumbnail_div = content_holder.find_element(By.CSS_SELECTOR, '.koowa_media__item__thumbnail')
+            image_url = thumbnail_div.find_element(By.TAG_NAME, 'img').get_attribute('src')
+            s3_image_url = upload_image_stream_to_s3(image_url, s3_bucket_name, f"county_materials/{product_details['name']}/colors/{color_name}_thumbnail_img.jpg")
             color_entry = {
                 'name':color_name,
                 'thumbnail_image_url':s3_image_url,
@@ -125,7 +127,7 @@ def get_product_details(product_url, category):
             }
             colors.append(color_entry)
     except Exception as e:
-        print('in color error')
+        print(e)
         product_details['colors'] = colors
 
     product_details['colors'] = colors
@@ -154,10 +156,10 @@ def get_product_details(product_url, category):
 
     absolute_size_image_url = urljoin(base_url, size_image_url)
 
-    if '.jpg' in absolute_size_img_url:
+    if '.jpg' in absolute_size_image_url:
         s3_size_image_url = upload_image_stream_to_s3(absolute_size_image_url, s3_bucket_name, f"county_materials/{product_details['name']}/sizes/{product_details['name']}.jpg"),
     else:
-    s3_size_image_url = upload_svg_as_png_to_s3(absolute_size_image_url, s3_bucket_name, f"county_materials/{product_details['name']}/sizes/{product_details['name']}.png"),
+        s3_size_image_url = upload_svg_as_png_to_s3(absolute_size_image_url, s3_bucket_name, f"county_materials/{product_details['name']}/sizes/{product_details['name']}.png"),
 
     size_entry = {
         'name': product_details['name'],

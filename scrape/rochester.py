@@ -99,17 +99,19 @@ def get_product_details(product_url, category):
 
 
         # List to store image URLs
-    image_urls = []
-
     ##images
-    vc_items = soup.find_all(class_='vc_item')
-    for item in vc_items:
+    image_urls = []
+    base_url = 'https://rochestercp.com/'
+    carousel_div = driver.get_element(By.CSS_SELECTOR, '#carousel-example-generic')
+    circle_navigators = carousel_div.get_elements(By.CSS_SELECTOR, '.carousel-indicators')
+    for cirle in circle_navigators:
     # Find the image within this vc_item
-        img_tag = item.find('img')
-        if img_tag and 'src' in img_tag.attrs:
-            img_url = img_tag['src']
-            # Join the URL with the base URL
-            image_urls.append(img_url)
+        circle.click()
+        image_div = carousel_div.find_element(By.CSS_SELECTOR, '.item')
+        image_url = image_div.find_element(By.TAG_NAME, 'img').get_attribute('src')
+        absolute_image_url = urljoin(base_url, image_url)
+        image_urls.append(absolute_image_url)
+
 
     s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"borgert/{product_details['name']}/images/main_{i}.jpg") for i, img_url in enumerate(image_urls)]
     product_details['images'] = s3_main_images

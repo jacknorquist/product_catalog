@@ -153,7 +153,10 @@ def get_product_details(product_url, category):
             break
 
     absolute_size_image_url = urljoin(base_url, size_image_url)
-    print(absolute_size_image_url)
+
+    if '.jpg' in absolute_size_img_url:
+        s3_size_image_url = upload_image_stream_to_s3(absolute_size_image_url, s3_bucket_name, f"county_materials/{product_details['name']}/sizes/{product_details['name']}.jpg"),
+    else:
     s3_size_image_url = upload_svg_as_png_to_s3(absolute_size_image_url, s3_bucket_name, f"county_materials/{product_details['name']}/sizes/{product_details['name']}.png"),
 
     size_entry = {

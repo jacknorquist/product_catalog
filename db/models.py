@@ -63,6 +63,7 @@ class Color(Base):
     image_url = Column(String, nullable=False)  # Thumbnail URL
     product = relationship('Product', back_populates='colors')
     accent_color = Column(Boolean, default=False)
+    texture = Column(String)
     color_images = relationship('ProductImage', back_populates='color') # Link to ProductImage model
 
 # Define the Texture model

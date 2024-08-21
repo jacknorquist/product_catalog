@@ -32,7 +32,8 @@ def insert_product(product_details, manufacturer_name):
         color_entry = Color(
             product_id=product.id,
             name=color['name'],
-            image_url=color['thumbnail_image_url']
+            image_url=color['thumbnail_image_url'],
+            texture = color.get('texture')
         )
         session.add(color_entry)
         session.commit()

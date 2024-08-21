@@ -214,7 +214,7 @@ def get_product_details(product_url, category):
 
             product_details['colors'] = colors
             product_details['sizes'] = []
-
+    ##if category is not outdoor living kits
     else:
         ##sizes
         size_entries=[]

@@ -23,7 +23,10 @@ s3_bucket_name='productscatalog'
 
 # Base URL for the product catalog
 PRODUCTS_URL = 'https://rochestercp.com/products'
-BASE_URL = 'https://rochestercp.com/'  # Replace with actual catalog URL
+BASE_URL = 'https://rochestercp.com/'
+base_url = 'https://rochestercp.com/'
+
+  # Replace with actual catalog URL
 
 
 def get_product_links(catalog_url):
@@ -37,15 +40,13 @@ def get_product_links(catalog_url):
 
     # Use WebDriverWait to wait for the page to fully load
     wait = WebDriverWait(driver, 10)
-    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.menu-item-type-custom')))
     time.sleep(3)
 
-    products_header = driver.find_element(By.CSS_SELECTOR, '.b-products')
-    product_menu = products_header.find_element(By.CSS_SELECTOR, '#menu-products')
+
 
 
     html = driver.page_source
-    soup = BeautifulSoup(html, 'html.parser')
+
 
     # List to store product links with their associated categories
     product_info = []
@@ -54,8 +55,12 @@ def get_product_links(catalog_url):
 
     # Iterate over each .sub-menu element
     for category_div in category_divs:
+        actions = ActionChains(driver)
+        actions.move_to_element(category_div).perform()
+
         category_text = category_div.find_element(By.TAG_NAME, 'h1').text.strip()
-        product_divs = category_div.find_elements(By.CSS_SELECTOR, '.item')
+        closest_container = category_div.find_element(By.XPATH, 'following-sibling::*[@class="container"]')
+        product_divs = closest_container.find_elements(By.CSS_SELECTOR, '.item')
         for product_div in product_divs:
             product_link = product_div.find_element(By.TAG_NAME, 'a').get_attribute('href')
             absolute_product_link = urljoin(base_url, product_link)
@@ -71,6 +76,7 @@ def get_product_details(product_url, category):
     service = Service('./chromedriver')
     driver = webdriver.Chrome(service=service, options=chrome_options)
     driver.get(product_url)
+    driver.maximize_window()
 
     # Use WebDriverWait to wait for the page to fully load
     wait = WebDriverWait(driver, 10)
@@ -84,78 +90,227 @@ def get_product_details(product_url, category):
     ## Category, name, description
 
     try:
-        product_details['name'] =driver.find_element(By.XPATH, '//div[@class="breadcrumbs"]//h1').text.strip()
+        product_details['name'] =driver.find_element(By.CSS_SELECTOR, 'h1').text.strip()
     except Exception as e:
         print('didnt get name')
-        product_details['name'] = "Description Coming Soon"
+        product_details['name'] = "Name Coming Soon"
+    print(product_details['name'])
+
+
 
     try:
-        product['description'] = driver.find_element(By.CSS_SELECTOR, '.lead').text.strip()
+        product_details['description'] = driver.find_element(By.CSS_SELECTOR, '.lead').text.strip()
     except Exception as e:
         print('didnt get details')
-        product['description'] = "Description Coming Soon"
+        product_details['description'] = "Description Coming Soon"
 
+    print(category)
     product_details['category'] = category
+    print(product_details['category'])
 
 
         # List to store image URLs
     ##images
     image_urls = []
     base_url = 'https://rochestercp.com/'
-    carousel_div = driver.get_element(By.CSS_SELECTOR, '#carousel-example-generic')
-    circle_navigators = carousel_div.get_elements(By.CSS_SELECTOR, '.carousel-indicators')
-    for cirle in circle_navigators:
-    # Find the image within this vc_item
-        circle.click()
-        image_div = carousel_div.find_element(By.CSS_SELECTOR, '.item')
-        image_url = image_div.find_element(By.TAG_NAME, 'img').get_attribute('src')
+    ##titan does not have the main images tab
+    if product_details['name'] == 'Titan Slabs':
+        image_url = driver.find_element(By.XPATH, '//img[@title="Titan Profile"]').get_attribute('src')
         absolute_image_url = urljoin(base_url, image_url)
-        image_urls.append(absolute_image_url)
+        s3_image_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{product_details['name']}/images/main.jpg")
+        product_details['images'] = [s3_image_url]
+
+    else:
+    ##try for image carousel, just grab the one image if not
+        try:
+            carousel_div = driver.find_element(By.CSS_SELECTOR, '#carousel-example-generic')
+            circle_navigators_div = carousel_div.find_element(By.CSS_SELECTOR, '.carousel-indicators')
+            circle_navigators = circle_navigators_div.find_elements(By.TAG_NAME, 'li')
+            for circle in circle_navigators:
+            # Find the image within this vc_item
+                circle.click()
+                image_div = carousel_div.find_element(By.CSS_SELECTOR, '.item.active')
+                image_url = image_div.find_element(By.TAG_NAME, 'img').get_attribute('src')
+                absolute_image_url = urljoin(base_url, image_url)
+                image_urls.append(absolute_image_url)
+        except Exception as e:
+            carousel_div = driver.find_element(By.CSS_SELECTOR, '#carousel-example-generic')
+            image_url = carousel_div.find_element(By.TAG_NAME, 'img').get_attribute('src')
+            absolute_image_url = urljoin(base_url, image_url)
+            image_urls.append(absolute_image_url)
+
+        s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"rochester/{product_details['name']}/images/main_{i}.jpg") for i, img_url in enumerate(image_urls)]
+        product_details['images'] = s3_main_images
 
 
-    s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"borgert/{product_details['name']}/images/main_{i}.jpg") for i, img_url in enumerate(image_urls)]
-    product_details['images'] = s3_main_images
 
+    ## if category is Outdoor Living Kits, most dont have color and size. Just get the pdf and colors
+    if product_details['category'] == 'Outdoor Living Kits':
+        literature_tab_btn = driver.find_element(By.XPATH, '//a[@aria-controls="literature"]')
+        literature_tab_btn.click()
+        tab_div = driver.find_element(By.CSS_SELECTOR, '.tab-pane.active')
+        images_divs = tab_div.find_elements(By.TAG_NAME, 'img')
+        for img in images_divs:
+            img_url = img.get_attribute('src')
+            if 'dimentions' in img_url:
+                parent_element = img.find_element(By.XPATH, 'ancestor::figure[1]')
+                pdf_url = parent_element.find_element(By.TAG_NAME, 'a').get_attribute('href')
+                absolute_image_url = urljoin(base_url, pdf_url)
+                s3_spec_sheet_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{product_details['name']}/spec_sheet.pdf", 'application/pdf')
+                product_details['spec_sheet'] = s3_spec_sheet_url
+                break
+            else:
+                spec_sheet_url = None
 
-    ##size
-    wrapper_divs = driver.find_elements(By.CSS_SELECTOR, '.vc_row.wpb_row.vc_row-fluid')
-    # container_div = wrapper_divs[3].find_element(By.CSS_SELECTOR, 'vc_grid-container')
-    size_entries=[]
-    size_div = wrapper_divs[3].find_element(By.CSS_SELECTOR, '.vc_grid')
-    size_items = size_div.find_elements(By.CSS_SELECTOR,'.vc_grid-item')
-    for size in size_items:
-        h4_text = size.find_element(By.TAG_NAME, 'h4').text.strip()
-        lines = h4_text.split('\n')
-        name = lines[0]
-        if len(lines)>1:
-            dimensions = lines[1]
+        ##colors
+        colors = []
+        color_tab_btn = driver.find_element(By.XPATH, '//a[@aria-controls="colors"]')
+        color_tab_btn.click()
+        tab_div = driver.find_element(By.CSS_SELECTOR, '.tab-pane.active')
+        rows = tab_div.find_elements(By.CSS_SELECTOR, '.row')
+        if len(rows)>1:
+            for row in rows:
+                colors_divs = row.find_elements(By.TAG_NAME, 'img')
+                try:
+                    texture=row.find_element(By.XPATH, 'preceding-sibling::h3[1]').text.strip()
+                except Exception as e:
+                    texture = None
+                for color in colors_divs:
+                    ## try for when h3 is not following sibling
+                    try:
+                        name = color.find_element(By.XPATH, 'following-sibling::h2').text.strip()
+                    except Exception as e:
+                        thumbnail_div = color.find_element(By.XPATH, 'parent::*[@class="thumbnail"]')
+                        name = thumbnail_div.find_element(By.XPATH, 'following-sibling::h2').text.strip()
+                    image_url = color.get_attribute('src')
+                    absolute_image_url = urljoin(base_url, image_url)
+                    s3_image_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{product_details['name']}/colors/{name}_.jpg")
+
+                    color_entry={
+                        'name':name,
+                        'thumbnail_image_url':s3_image_url,
+                        'texture':texture
+                    }
+                    colors.append(color_entry)
         else:
-            dimensions = ""
-        image_url = size.find_element(By.CSS_SELECTOR, '.vc-prettyphoto-link').get_attribute('href')
-        s3_size_image_url = upload_image_stream_to_s3(image_url, s3_bucket_name, f"borgert/{product_details['name']}/sizes/{name}.png")
-
-        size_entry = {
-            'name': name,
-            'image': s3_size_image_url,
-            'dimensions': dimensions
-        }
-        size_entries.append(size_entry)
-
-    product_details['sizes']=size_entries
-
-
-    ##Spec sheet
-    s3_spec_sheet_url  = None
-
-    wait = WebDriverWait(driver, 10)
-    pdf_links = driver.find_elements(By.XPATH, "//a[contains(@href, '.pdf')]")
-    s3_spec_sheet_url = upload_image_stream_to_s3(pdf_links[0].get_attribute('href'), s3_bucket_name, f"borgert/{product_details['name']}/spec_sheet.pdf", 'application/pdf')
-    print('spect_shee url', s3_spec_sheet_url)
+            colors_divs = tab_div.find_elements(By.TAG_NAME, 'img')
+            for color in colors_divs:
+                    ## try for when h3 is not following sibling
+                    try:
+                        name = color.find_element(By.XPATH, 'following-sibling::h2').text.strip()
+                    except Exception as e:
+                        thumbnail_div = color.find_element(By.XPATH, 'parent::*[@class="thumbnail"]')
+                        name = thumbnail_div.find_element(By.XPATH, 'following-sibling::h2').text.strip()
+                    image_url = color.get_attribute('src')
+                    absolute_image_url = urljoin(base_url, image_url)
+                    s3_image_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{product_details['name']}/colors/{name}_.jpg")
+                    color_entry={
+                        'name':name,
+                        'thumbnail_image_url':s3_image_url,
+                        'texture':None
+                    }
+                    colors.append(color_entry)
 
 
+            product_details['colors'] = colors
+            product_details['sizes'] = []
 
-    product_details['spec_sheet']=s3_spec_sheet_url
-    product_details['colors'] = []
+    else:
+        ##sizes
+        size_entries=[]
+        tab_div = driver.find_element(By.CSS_SELECTOR, '.tab-pane.active')
+        tables = tab_div.find_elements(By.TAG_NAME, 'table')
+        for table in tables:
+            rows = table.find_elements(By.XPATH, './/tr')[1:]
+            for row in rows:
+                tds = row.find_elements(By.CSS_SELECTOR, 'td')
+                for i, td in enumerate(tds[:2]):
+                    if i==0:
+                        name = td.text.strip()
+                    else:
+                        dimensions = td.text.strip()
+                size_entry = {
+                    'name': name,
+                    'image': None,
+                    'dimensions': dimensions
+                }
+                size_entries.append(size_entry)
+
+        product_details['sizes']=size_entries
+
+
+        #colors
+        colors = []
+        color_tab_btn = driver.find_element(By.XPATH, '//a[@aria-controls="colors"]')
+        color_tab_btn.click()
+        tab_div = driver.find_element(By.CSS_SELECTOR, '.tab-pane.active')
+        rows = tab_div.find_elements(By.CSS_SELECTOR, '.row')
+        if len(rows)>1:
+            for row in rows:
+                colors_divs = row.find_elements(By.TAG_NAME, 'img')
+                try:
+                    texture=row.find_element(By.XPATH, 'preceding-sibling::h3[1]').text.strip()
+                except Exception as e:
+                    texture = None
+                for color in colors_divs:
+                    ## try for when h3 is not following sibling
+                    try:
+                        name = color.find_element(By.XPATH, 'following-sibling::h2').text.strip()
+                    except Exception as e:
+                        thumbnail_div = color.find_element(By.XPATH, 'parent::*[@class="thumbnail"]')
+                        name = thumbnail_div.find_element(By.XPATH, 'following-sibling::h2').text.strip()
+                    image_url = color.get_attribute('src')
+                    absolute_image_url = urljoin(base_url, image_url)
+                    s3_image_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{product_details['name']}/colors/{name}_.jpg")
+
+                    color_entry={
+                        'name':name,
+                        'thumbnail_image_url':s3_image_url,
+                        'texture':texture
+                    }
+                    colors.append(color_entry)
+        else:
+            colors_divs = tab_div.find_elements(By.TAG_NAME, 'img')
+            for color in colors_divs:
+                    ## try for when h3 is not following sibling
+                    try:
+                        name = color.find_element(By.XPATH, 'following-sibling::h2').text.strip()
+                    except Exception as e:
+                        thumbnail_div = color.find_element(By.XPATH, 'parent::*[@class="thumbnail"]')
+                        name = thumbnail_div.find_element(By.XPATH, 'following-sibling::h2').text.strip()
+                    image_url = color.get_attribute('src')
+                    absolute_image_url = urljoin(base_url, image_url)
+                    s3_image_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{product_details['name']}/colors/{name}_.jpg")
+                    color_entry={
+                        'name':name,
+                        'thumbnail_image_url':s3_image_url,
+                        'texture':None
+                    }
+                    colors.append(color_entry)
+        product_details['colors'] = colors
+
+
+
+        ##Spec sheet
+        literature_tab_btn = driver.find_element(By.XPATH, '//a[@aria-controls="literature"]')
+        literature_tab_btn.click()
+        tab_div = driver.find_element(By.CSS_SELECTOR, '.tab-pane.active')
+        images_divs = tab_div.find_elements(By.TAG_NAME, 'img')
+        for img in images_divs:
+            img_url = img.get_attribute('src')
+            if 'cut-sheet' in img_url and img.get_attribute('title') != 'Super Stik':
+                parent_element = img.find_element(By.XPATH, 'ancestor::figure[1]')
+                pdf_url = parent_element.find_element(By.TAG_NAME, 'a').get_attribute('href')
+                absolute_image_url = urljoin(base_url, pdf_url)
+                s3_spec_sheet_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{product_details['name']}/spec_sheet.pdf", 'application/pdf')
+                product_details['spec_sheet'] = s3_spec_sheet_url
+                break
+            else:
+                spec_sheet_url = None
+
+
+
+
     product_details['textures'] = []
 
 
@@ -166,8 +321,9 @@ def get_product_details(product_url, category):
     return product_details
 
 def scrape_catalog(products_url = PRODUCTS_URL):
-    product_links = get_product_links(catalog_url)
 
+    product_links = get_product_links(products_url)
+    print(product_links)
     all_products = []
     for link, category in product_links:
         product_details = get_product_details(link, category)

@@ -27,6 +27,7 @@ class Product(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     category = Column(String, nullable=False)
+    normalized_category_name = Column(String, ForeignKey('normalized_category.name'), nullable=False)
     manufacturer_id = Column(Integer, ForeignKey('manufacturers.id'), nullable=False)
     description = Column(String)
     spec_sheet = Column(String)
@@ -39,6 +40,11 @@ class Product(Base):
     __table_args__ = (
         Index('ix_product_manufacturer_id', 'manufacturer_id'),
     )
+
+class NormalizedCategory(Base):
+    __tablename__ = 'normalized_category'
+    name = Column(String, nullable= false, primary_key=True)
+    products = relationship('Product', back_populates='category')
 
 
 class Size(Base):

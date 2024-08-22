@@ -43,8 +43,8 @@ class Product(Base):
 
 class NormalizedCategory(Base):
     __tablename__ = 'normalized_category'
-    name = Column(String, nullable= false, primary_key=True)
-    products = relationship('Product', back_populates='category')
+    name = Column(String, nullable= False, primary_key=True)
+    products = relationship('Product', back_populates='normalized_category')
 
 
 class Size(Base):

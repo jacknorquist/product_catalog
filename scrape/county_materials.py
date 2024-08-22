@@ -178,8 +178,8 @@ def get_product_details(product_url, category):
 
 def scrape_catalog():
 
-    category_links = [('https://www.countymaterials.com/en/products/landscaping/retaining-walls', 'Retaining Walls'),
-                        ('https://www.countymaterials.com/en/products/landscaping/pavers', 'Pavers'),
+    category_links = [('https://www.countymaterials.com/en/products/landscaping/retaining-walls', 'Walls and '),
+                        ('https://www.countymaterials.com/en/products/landscaping/pavers', 'Pavers & Slabs'),
                         ('https://www.countymaterials.com/en/products/landscaping/outdoor-fireplaces-fire-rings-patio-living-products/step-units', 'Steps'),
                         ('https://www.countymaterials.com/en/products/landscaping/outdoor-fireplaces-fire-rings-patio-living-products/fire-pit-kits-circle-square', 'Fire Pits')]
     product_links = []

@@ -19,6 +19,20 @@ from db.insert_product import insert_product
 
 s3_bucket_name='productscatalog'
 
+normalized_category = {
+    'Pavers & Slabs': 'Pavers & Slabs',
+    'Landscape Tiles': 'Pavers & Slabs'
+    'Permeable Pavements': 'Permeable Pavements',
+    'Walls': 'Walls',
+    'Outdoor Living Kits': 'Outdoor & Fireplace Kits'
+    'Accents': 'Accessories',
+    'Edgers': 'Edgers',
+    'Caps & Tops': 'Caps',
+    'Accessories': 'Accessories',
+    'Finishing Touches': 'Accessories'
+}
+
+
 
 
 # Base URL for the product catalog
@@ -101,6 +115,17 @@ def get_product_details(product_url, category):
 
 
     clean_product_name = product_details['name'].replace(' ', '-')
+
+    product_details['normalized_category_name'] = normalized_category[category]
+
+    if 'Step' in product_details['name']:
+        product_details['normalized_category_name'] = 'Steps'
+    if 'Stepping Stones' in product_details['name']:
+        product_details['normalized_category_name'] = 'Pavers & Slabs'
+    if 'Bullnose' in product_details['name']:
+        product_details['normalized_category_name'] = 'Pavers & Slabs'
+    if 'Accent' in product_details['name']:
+        product_details['normalized_category_name'] = 'Accents'
 
     try:
         product_details['description'] = driver.find_element(By.CSS_SELECTOR, '.lead').text.strip()
@@ -234,7 +259,7 @@ def get_product_details(product_url, category):
                         name = td.text.strip()
                     else:
                         dimensions = td.text.strip()
-                        dimensions = dimensions.replace('\n', ' ').replace('\r', ' ')
+                        dimensions = dimensions.replace('\n', ' ').replace('\r', ' ').replace('"', 'in.' ).replace('*', '')
                         dimensions = ' '.join(dimensions.split())
                         print(dimensions)
                 size_entry = {

@@ -19,6 +19,15 @@ from db.insert_product import insert_product
 
 s3_bucket_name='productscatalog'
 
+normalized_category = {
+    'Slabs': 'Pavers & Slabs',
+    'Pavers': 'Pavers & Slabs',
+    'Tumbled Pavers': 'Pavers & Slabs'
+    'Permeable Pavements': 'Permeable Pavements',
+    'Walls & Step Units': 'Walls',
+    'Accents': 'Accessories'
+}
+
 
 
 # Base URL for the product catalog
@@ -98,6 +107,14 @@ def get_product_details(product_url, category):
         product_details['description'] = content.find_element(By.TAG_NAME, 'p').text.strip()
     except Exception as e:
         product_details['description'] = "Description Coming Soon"
+
+    product_details['normalized_category_name'] = normalized_category[category]
+
+    if 'Step' in product_details['name']:
+        product_details['normalized_category_name'] = 'Steps'
+
+    if 'Cap' in product_details['name']:
+        product_details['normalized_category_name'] = 'Caps'
     product_details['category'] = category
 
 

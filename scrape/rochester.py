@@ -90,13 +90,17 @@ def get_product_details(product_url, category):
     ## Category, name, description
 
     try:
-        product_details['name'] =driver.find_element(By.CSS_SELECTOR, 'h1').text.strip()
+        name=driver.find_element(By.CSS_SELECTOR, 'h1').text.strip()
+        name = name.replace('\n', ' ')
+        name = ' '.join(name.split())
+        product_details['name'] = name
     except Exception as e:
         print('didnt get name')
         product_details['name'] = "Name Coming Soon"
     print(product_details['name'])
 
 
+    clean_product_name = product_details['name'].replace(' ', '-')
 
     try:
         product_details['description'] = driver.find_element(By.CSS_SELECTOR, '.lead').text.strip()
@@ -117,7 +121,7 @@ def get_product_details(product_url, category):
     if product_details['name'] == 'Titan Slabs':
         image_url = driver.find_element(By.XPATH, '//img[@title="Titan Profile"]').get_attribute('src')
         absolute_image_url = urljoin(base_url, image_url)
-        s3_image_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{product_details['name']}/images/main.jpg")
+        s3_image_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{clean_product_name}/images/main.jpg")
         product_details['images'] = [s3_image_url]
 
     else:
@@ -139,7 +143,7 @@ def get_product_details(product_url, category):
             absolute_image_url = urljoin(base_url, image_url)
             image_urls.append(absolute_image_url)
 
-        s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"rochester/{product_details['name']}/images/main_{i}.jpg") for i, img_url in enumerate(image_urls)]
+        s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"rochester/{clean_product_name}/images/main_{i}.jpg") for i, img_url in enumerate(image_urls)]
         product_details['images'] = s3_main_images
 
 
@@ -156,7 +160,7 @@ def get_product_details(product_url, category):
                 parent_element = img.find_element(By.XPATH, 'ancestor::figure[1]')
                 pdf_url = parent_element.find_element(By.TAG_NAME, 'a').get_attribute('href')
                 absolute_image_url = urljoin(base_url, pdf_url)
-                s3_spec_sheet_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{product_details['name']}/spec_sheet.pdf", 'application/pdf')
+                s3_spec_sheet_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{clean_product_name}/spec_sheet.pdf", 'application/pdf')
                 product_details['spec_sheet'] = s3_spec_sheet_url
                 break
             else:
@@ -184,7 +188,7 @@ def get_product_details(product_url, category):
                         name = thumbnail_div.find_element(By.XPATH, 'following-sibling::h2').text.strip()
                     image_url = color.get_attribute('src')
                     absolute_image_url = urljoin(base_url, image_url)
-                    s3_image_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{product_details['name']}/colors/{name}_.jpg")
+                    s3_image_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{clean_product_name}/colors/{name}_.jpg")
 
                     color_entry={
                         'name':name,
@@ -202,8 +206,9 @@ def get_product_details(product_url, category):
                         thumbnail_div = color.find_element(By.XPATH, 'parent::*[@class="thumbnail"]')
                         name = thumbnail_div.find_element(By.XPATH, 'following-sibling::h2').text.strip()
                     image_url = color.get_attribute('src')
+                    clean_color_name = name.replace(' ', '-')
                     absolute_image_url = urljoin(base_url, image_url)
-                    s3_image_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{product_details['name']}/colors/{name}_.jpg")
+                    s3_image_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{clean_product_name}/colors/{clean_color_name}_.jpg")
                     color_entry={
                         'name':name,
                         'thumbnail_image_url':s3_image_url,
@@ -229,10 +234,13 @@ def get_product_details(product_url, category):
                         name = td.text.strip()
                     else:
                         dimensions = td.text.strip()
+                        dimensions = dimensions.replace('\n', ' ').replace('\r', ' ')
+                        dimensions = ' '.join(dimensions.split())
+                        print(dimensions)
                 size_entry = {
                     'name': name,
                     'image': None,
-                    'dimensions': dimensions
+                    'dimensions': [dimensions]
                 }
                 size_entries.append(size_entry)
 
@@ -259,9 +267,10 @@ def get_product_details(product_url, category):
                     except Exception as e:
                         thumbnail_div = color.find_element(By.XPATH, 'parent::*[@class="thumbnail"]')
                         name = thumbnail_div.find_element(By.XPATH, 'following-sibling::h2').text.strip()
+                    clean_color_name = name.replace(' ', '-')
                     image_url = color.get_attribute('src')
                     absolute_image_url = urljoin(base_url, image_url)
-                    s3_image_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{product_details['name']}/colors/{name}_.jpg")
+                    s3_image_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{product_details['name']}/colors/{clean_color_name}_.jpg")
 
                     color_entry={
                         'name':name,
@@ -278,9 +287,10 @@ def get_product_details(product_url, category):
                     except Exception as e:
                         thumbnail_div = color.find_element(By.XPATH, 'parent::*[@class="thumbnail"]')
                         name = thumbnail_div.find_element(By.XPATH, 'following-sibling::h2').text.strip()
+                    clean_color_name = name.replace(' ', '-')
                     image_url = color.get_attribute('src')
                     absolute_image_url = urljoin(base_url, image_url)
-                    s3_image_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{product_details['name']}/colors/{name}_.jpg")
+                    s3_image_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{product_details['name']}/colors/{clean_color_name}_.jpg")
                     color_entry={
                         'name':name,
                         'thumbnail_image_url':s3_image_url,
@@ -302,7 +312,7 @@ def get_product_details(product_url, category):
                 parent_element = img.find_element(By.XPATH, 'ancestor::figure[1]')
                 pdf_url = parent_element.find_element(By.TAG_NAME, 'a').get_attribute('href')
                 absolute_image_url = urljoin(base_url, pdf_url)
-                s3_spec_sheet_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{product_details['name']}/spec_sheet.pdf", 'application/pdf')
+                s3_spec_sheet_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{clean_product_name}/spec_sheet.pdf", 'application/pdf')
                 product_details['spec_sheet'] = s3_spec_sheet_url
                 break
             else:
@@ -323,7 +333,6 @@ def get_product_details(product_url, category):
 def scrape_catalog(products_url = PRODUCTS_URL):
 
     product_links = get_product_links(products_url)
-    print(product_links)
     all_products = []
     for link, category in product_links:
         product_details = get_product_details(link, category)

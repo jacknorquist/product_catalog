@@ -43,6 +43,7 @@ def get_product_links(link, category):
     products = driver.find_elements(By.CSS_SELECTOR, '.teaser-item')
     product_links = []
 
+
     # List to store product links with their associated categories
     for product in products:
         try:

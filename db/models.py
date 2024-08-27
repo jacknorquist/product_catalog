@@ -27,25 +27,26 @@ class Product(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     category = Column(String, nullable=False)
-    normalized_category_name = Column(String, ForeignKey('normalized_category.name'), nullable=False)
+    normalized_category_name = Column(String, ForeignKey('normalized_categories.name'), nullable=False)
     manufacturer_id = Column(Integer, ForeignKey('manufacturers.id'), nullable=False)
     description = Column(String)
     spec_sheet = Column(String)
+
     manufacturer = relationship('Manufacturer', back_populates='products')
     colors = relationship('Color', back_populates='product', cascade="all, delete-orphan")
     textures = relationship('Texture', back_populates='product', cascade="all, delete-orphan")
     images = relationship('ProductImage', back_populates='product', cascade="all, delete-orphan")
     sizes = relationship('Size', back_populates='product', cascade="all, delete-orphan")
+    normalized_category = relationship('NormalizedCategory', back_populates='products')
 
     __table_args__ = (
         Index('ix_product_manufacturer_id', 'manufacturer_id'),
     )
 
 class NormalizedCategory(Base):
-    __tablename__ = 'normalized_category'
-    name = Column(String, nullable= False, primary_key=True)
+    __tablename__ = 'normalized_categories'
+    name = Column(String, primary_key=True, nullable=False)
     products = relationship('Product', back_populates='normalized_category')
-
 
 class Size(Base):
     __tablename__ = 'sizes'

@@ -18,7 +18,7 @@ def insert_product(product_details, manufacturer_name):
     product = Product(
         name=product_details['name'],
         category=product_details['category'],
-        normalized_category_name = product_details['normalized_category'],
+        normalized_category_name = product_details['normalized_category_name'],
         description = product_details['description'],
         manufacturer = manufacturer,
         spec_sheet=product_details.get('spec_sheet')

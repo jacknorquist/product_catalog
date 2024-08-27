@@ -21,15 +21,15 @@ s3_bucket_name='productscatalog'
 
 normalized_category = {
     'Pavers & Slabs': 'Pavers & Slabs',
-    'Landscape Tiles': 'Pavers & Slabs'
+    'Landscape Tiles': 'Pavers & Slabs',
     'Permeable Pavements': 'Permeable Pavements',
     'Walls': 'Walls',
-    'Outdoor Living Kits': 'Outdoor & Fireplace Kits'
+    'Outdoor Living Kits': 'Outdoor & Fireplace Kits',
     'Accents': 'Accessories',
     'Edgers': 'Edgers',
     'Caps & Tops': 'Caps',
     'Accessories': 'Accessories',
-    'Finishing Touches': 'Accessories'
+    'Finishing Touches': 'Accessories',
 }
 
 
@@ -125,7 +125,7 @@ def get_product_details(product_url, category):
     if 'Bullnose' in product_details['name']:
         product_details['normalized_category_name'] = 'Pavers & Slabs'
     if 'Accent' in product_details['name']:
-        product_details['normalized_category_name'] = 'Accessories
+        product_details['normalized_category_name'] = 'Pavers $ Slabs'
 
     try:
         product_details['description'] = driver.find_element(By.CSS_SELECTOR, '.lead').text.strip()
@@ -365,7 +365,13 @@ def scrape_catalog(products_url = PRODUCTS_URL):
 
     for product in all_products:
         insert_product(product, 'Rochester Concrete Products')
+    # first_link, first_category = product_links[0]
 
+    # # Get details for the first product
+    # product_details = get_product_details(first_link, first_category)
+
+    # # Insert the product details into the database
+    # insert_product(product_details, 'Rochester Concrete Products')
     return all_products
 
 if __name__ == '__main__':

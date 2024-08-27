@@ -125,7 +125,7 @@ def get_product_details(product_url, category):
     if 'Bullnose' in product_details['name']:
         product_details['normalized_category_name'] = 'Pavers & Slabs'
     if 'Accent' in product_details['name']:
-        product_details['normalized_category_name'] = 'Accents'
+        product_details['normalized_category_name'] = 'Accessories
 
     try:
         product_details['description'] = driver.find_element(By.CSS_SELECTOR, '.lead').text.strip()

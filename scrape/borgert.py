@@ -110,6 +110,7 @@ def get_product_details(product_url, category):
 
     product_details['normalized_category_name'] = normalized_category[category]
 
+
     if 'Step' in product_details['name']:
         product_details['normalized_category_name'] = 'Steps'
 

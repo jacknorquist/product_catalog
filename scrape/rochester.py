@@ -371,6 +371,7 @@ def scrape_catalog(products_url = PRODUCTS_URL):
     # product_details = get_product_details(first_link, first_category)
 
     # # Insert the product details into the database
+
     # insert_product(product_details, 'Rochester Concrete Products')
     return all_products
 

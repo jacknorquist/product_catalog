@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+
 # Define the base class for declarative models
 Base = declarative_base()
 

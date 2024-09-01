@@ -40,6 +40,7 @@ PRODUCTS_URL = 'https://rochestercp.com/products'
 BASE_URL = 'https://rochestercp.com/'
 base_url = 'https://rochestercp.com/'
 
+
   # Replace with actual catalog URL
 
 

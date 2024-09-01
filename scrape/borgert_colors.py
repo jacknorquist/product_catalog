@@ -43,6 +43,7 @@ def get_colors():
         time.sleep(1)
         name_div=color.find_element(By.CSS_SELECTOR, '.item-title')
         name = name_div.find_element(By.TAG_NAME, 'a').text.strip()
+        clean_color_name = name.replace(' ', '-')
         print(name)
         image_div = color.find_element(By.CSS_SELECTOR, '.item-image')
 
@@ -51,13 +52,14 @@ def get_colors():
 
         print(image_url)
         product_name = color.find_element(By.TAG_NAME, 'strong').text.strip()
+        clean_product_name = product_name.replace(' ', '-')
         description = color.find_element(By.CSS_SELECTOR, '.item-meta').text.strip()
         if "Accent Color" in description:
             accent_color = True
         else:
             accent_color = False
 
-        s3_image_url = upload_image_stream_to_s3(image_url, s3_bucket_name, f"borgert/{product_name}/colors/{name}_.jpg")
+        s3_image_url = upload_image_stream_to_s3(image_url, s3_bucket_name, f"borgert/{clean_product_name}/colors/{clean_color_name}_.jpg")
 
 
         color_entry = {

@@ -25,7 +25,7 @@ normalized_category = {
     'Tumbled Pavers': 'Pavers & Slabs'
     'Permeable Pavements': 'Permeable Pavements',
     'Walls & Step Units': 'Walls',
-    'Accents': 'Accessories'
+    'Accents': 'Accessories'.
 }
 
 
@@ -99,6 +99,8 @@ def get_product_details(product_url, category):
     product_details['name'] = product_details['name'].replace(' – Curved & Straight Face', '').strip()
     product_details['name'] = product_details['name'].replace(' | Textured & Smooth', '').strip()
 
+    clean_product_name = product_details['name'].replace(' ', '-')
+
     if product_details['name'] == 'Fireplaces, Ovens & Fire Rings':
         return
     print(product_details['name'])
@@ -132,7 +134,7 @@ def get_product_details(product_url, category):
             # Join the URL with the base URL
             image_urls.append(img_url)
 
-    s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"borgert/{product_details['name']}/images/main_{i}.jpg") for i, img_url in enumerate(image_urls)]
+    s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"borgert/{clean_product_name}/images/main_{i}.jpg") for i, img_url in enumerate(image_urls)]
     product_details['images'] = s3_main_images
 
 
@@ -146,12 +148,13 @@ def get_product_details(product_url, category):
         h4_text = size.find_element(By.TAG_NAME, 'h4').text.strip()
         lines = h4_text.split('\n')
         name = lines[0]
+        clean_size_name = .replace(' ', '-')
         if len(lines)>1:
             dimensions = lines[1]
         else:
             dimensions = ""
         image_url = size.find_element(By.CSS_SELECTOR, '.vc-prettyphoto-link').get_attribute('href')
-        s3_size_image_url = upload_image_stream_to_s3(image_url, s3_bucket_name, f"borgert/{product_details['name']}/sizes/{name}.png")
+        s3_size_image_url = upload_image_stream_to_s3(image_url, s3_bucket_name, f"borgert/{clean_product_name}/sizes/{clean_size_name}.png")
 
         size_entry = {
             'name': name,
@@ -168,7 +171,7 @@ def get_product_details(product_url, category):
 
     wait = WebDriverWait(driver, 10)
     pdf_links = driver.find_elements(By.XPATH, "//a[contains(@href, '.pdf')]")
-    s3_spec_sheet_url = upload_image_stream_to_s3(pdf_links[0].get_attribute('href'), s3_bucket_name, f"borgert/{product_details['name']}/spec_sheet.pdf", 'application/pdf')
+    s3_spec_sheet_url = upload_image_stream_to_s3(pdf_links[0].get_attribute('href'), s3_bucket_name, f"borgert/{clean_product_name}/spec_sheet.pdf", 'application/pdf')
     print('spect_shee url', s3_spec_sheet_url)
 
 

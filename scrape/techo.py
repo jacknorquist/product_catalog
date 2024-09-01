@@ -18,6 +18,21 @@ from db.insert_product import insert_product
 
 s3_bucket_name='productscatalog'
 
+normalized_category = {
+    'Patio Slabs': 'Pavers & Slabs',
+    'Pavers': 'Pavers & Slabs',
+    'Permeable Pavements': 'Permeable Pavements',
+    'Garrden & Retaining Walls': 'Walls',
+    'Accessories': 'Accessories',
+    'Garden Edging Stones': 'Edgers',
+    'Wall Caps': 'Caps',
+    'Pool Coping & Wall Caps': 'Caps'
+    'Misc': 'Accessories',
+    'Stone Steps': 'Steps'
+
+}
+
+
 
 
 # Base URL for the product catalog
@@ -31,6 +46,9 @@ def get_product_links(driver):
     product_links = [urljoin(driver.current_url, a['href']) for a in soup.select('.techobloc-product-card__link') if 'href' in a.attrs]
     return product_links
     return product_links
+
+
+
 
 def get_product_details(product_url):
 
@@ -51,6 +69,7 @@ def get_product_details(product_url):
     product_details = {}
     product_name = soup.select_one('.roc-pdp-title__product-name').text.strip()
     product_details['name'] = product_name
+    clean_product_name = product_details['name'].replace(' ', '-')
     print(product_name, 'product nameeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee')
     try:
         product_details['category'] = soup.select_one('.roc-pdp-title__product-category-text').text.strip()
@@ -69,7 +88,8 @@ def get_product_details(product_url):
     popup_close.click();
 
 
-
+    if product_details['category'] == 'Masonry':
+        return
 
 
     if product_details['category'] != 'Accessories' and product_details['name'] != 'Breeo - Zentro Smokeless Steel Insert' and product_details['category'] != 'Misc' and product_details['category'] != 'Outdoor Kitchens':
@@ -82,6 +102,7 @@ def get_product_details(product_url):
 
         for color_item in color_items:
             color_name = color_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-name').text.strip()
+            clean_color_name = color_name.replace(' ', '-')
             thumbnail_img = color_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-asset').get_attribute('src')
             absolute_thumbnail_img_url = urljoin(base_url, thumbnail_img)
 
@@ -112,8 +133,8 @@ def get_product_details(product_url):
                             print(f"Error processing image item: {e}")
 
                     # Upload thumbnail and main images
-                    s3_thumbnail_img_url = upload_image_stream_to_s3(absolute_thumbnail_img_url, s3_bucket_name, f"techo/{product_name}/colors/{color_name}_thumbnail.jpg")
-                    s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"techo/{product_name}/images/{color_name}_main_{i}.jpg") for i, img_url in enumerate(main_images)]
+                    s3_thumbnail_img_url = upload_image_stream_to_s3(absolute_thumbnail_img_url, s3_bucket_name, f"techo/{clean_product_name}/colors/{clean_color_name}_thumbnail.jpg")
+                    s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"techo/{clean_product_name}/images/{clean_color_name}_main_{i}.jpg") for i, img_url in enumerate(main_images)]
 
                     colors.append({
                         'name': color_name,
@@ -135,6 +156,7 @@ def get_product_details(product_url):
 
             for texture_item in texture_items:
                 texture_name = texture_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-name').text.strip()
+                clean_texture_name = texture_name.replace(' ', '-')
                 thumbnail_img = texture_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-asset').get_attribute('src')
                 absolute_thumbnail_img_url = urljoin(base_url, thumbnail_img)
 
@@ -162,8 +184,8 @@ def get_product_details(product_url):
                                 print(f"Error processing image item: {e}")
 
                         # Upload thumbnail and main images
-                        s3_thumbnail_img_url = upload_image_stream_to_s3(absolute_thumbnail_img_url, s3_bucket_name, f"techo/{product_name}/textures/{texture_name}_thumbnail.jpg")
-                        s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"techo/{product_name}/textures/{texture_name}_main_{i}.jpg") for i, img_url in enumerate(main_images)]
+                        s3_thumbnail_img_url = upload_image_stream_to_s3(absolute_thumbnail_img_url, s3_bucket_name, f"techo/{clean_product_name}/textures/{clean_texture_name}_thumbnail.jpg")
+                        s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"techo/{clean_product_name}/textures/{clean_texture_name}_main_{i}.jpg") for i, img_url in enumerate(main_images)]
 
                         textures.append({
                             'name': texture_name,
@@ -190,13 +212,15 @@ def get_product_details(product_url):
                     absolute_size_img_url = urljoin(base_url, size_img)
 
                     name = size_item.find_element(By.CSS_SELECTOR,'.roc-pdp-selections__sizes-product').text.strip()
+                    clean_size_name = product_details['name'].replace(' ', '-')
+
                     # Find and extract all DIMENSIONS
                     dimension_elements = size_item.find_elements(By.CLASS_NAME, 'roc-pdp-selections__sizes-size')
                     if dimension_elements:
                         dimensions = [dim.text.strip() for dim in dimension_elements]
                     else:
                         dimensions = ""
-                    s3_size_img_url = upload_image_stream_to_s3(absolute_size_img_url, s3_bucket_name, f"techo/{product_name}/sizes/{name}.png")
+                    s3_size_img_url = upload_image_stream_to_s3(absolute_size_img_url, s3_bucket_name, f"techo/{clean_product_name}/sizes/{clean_size_name}.png")
 
                     # Construct the size entry dictionary
                     size_entry = {
@@ -226,7 +250,7 @@ def get_product_details(product_url):
                 spec_button[0].click()
                 spec_sheet_url=driver.find_element(By.CSS_SELECTOR, '.roc-pdp-technical-documents__download').get_attribute('href')
                 absolute_spec_sheet_url = urljoin(base_url, spec_sheet_url)
-                s3_spec_sheet_url = upload_image_stream_to_s3(absolute_spec_sheet_url, s3_bucket_name, f"techo/{product_name}/spec_sheet.pdf", 'application/pdf')
+                s3_spec_sheet_url = upload_image_stream_to_s3(absolute_spec_sheet_url, s3_bucket_name, f"techo/{clean_product_name}/spec_sheet.pdf", 'application/pdf')
 
 
     else:
@@ -247,7 +271,7 @@ def get_product_details(product_url):
                 print(f"Error processing image item: {e}")
 
                     # Upload thumbnail and main images
-            main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"techo/{product_name}/images/main_{i}.jpg") for i, img_url in enumerate(images)]
+            main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"techo/{clean_product_name}/images/main_{i}.jpg") for i, img_url in enumerate(images)]
     try:
         descriptionDiv = driver.find_element(By.CSS_SELECTOR, '#tab-description-description')
         descriptionButton = descriptionDiv.find_element(By.CSS_SELECTOR, '.roc-pdp-sections__accordion-button')
@@ -315,7 +339,8 @@ def scrape_catalog(catalog_url=BASE_URL):
     # insert_product(product_details, 'Techo Bloc')
     for link in product_links:
         product_details = get_product_details(link)
-        all_products.append(product_details)
+        if product_details:
+            all_products.append(product_details)
 
     for product in all_products:
         insert_product(product, 'Techo Bloc')

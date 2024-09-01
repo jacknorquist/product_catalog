@@ -90,8 +90,10 @@ def get_product_details(product_url, category):
     item = main_div.find_element(By.CSS_SELECTOR, '.item')
     textWrapper = item.find_element(By.CSS_SELECTOR, '#product-details')
     product_details['name'] = textWrapper.find_element(By.CSS_SELECTOR, '#details-title').text.strip()
+    clean_product_name = product_details['name'].replace(' ', '-')
     product_details['description'] = textWrapper.find_element(By.CSS_SELECTOR, '#details-desc').text.strip()
     product_details['category'] = category
+    product_details['normalized_category_name'] = product_details['category']
 
     print(product_details['name'])
 
@@ -104,7 +106,7 @@ def get_product_details(product_url, category):
     for img_url in img_urls:
         image_urls.append(img_url.get_attribute('src'))
 
-    s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"county_materials/{product_details['name']}/images/main_img_{i}.jpg") for i, img_url in enumerate(image_urls)]
+    s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"county_materials/{clean_product_name}/images/main_img_{i}.jpg") for i, img_url in enumerate(image_urls)]
 
     product_details['images'] = s3_main_images
 
@@ -118,9 +120,10 @@ def get_product_details(product_url, category):
             content_holder = color_element.find_element(By.CSS_SELECTOR, '.koowa_media__item__content-holder')
             label_holder =content_holder.find_element(By.CSS_SELECTOR, '.koowa_header.koowa_media__item__label')
             color_name = label_holder.find_element(By.CSS_SELECTOR, '.overflow_container').text.strip()
+            clean_color_name = color_name.replace(' ', '-')
             thumbnail_div = content_holder.find_element(By.CSS_SELECTOR, '.koowa_media__item__thumbnail')
             image_url = thumbnail_div.find_element(By.TAG_NAME, 'img').get_attribute('src')
-            s3_image_url = upload_image_stream_to_s3(image_url, s3_bucket_name, f"county_materials/{product_details['name']}/colors/{color_name}_thumbnail_img.jpg")
+            s3_image_url = upload_image_stream_to_s3(image_url, s3_bucket_name, f"county_materials/{clean_product_name}/colors/{clean_color_name}_thumbnail_img.jpg")
             color_entry = {
                 'name':color_name,
                 'thumbnail_image_url':s3_image_url,
@@ -158,9 +161,9 @@ def get_product_details(product_url, category):
     absolute_size_image_url = urljoin(base_url, size_image_url)
 
     if '.jpg' in absolute_size_image_url:
-        s3_size_image_url = upload_image_stream_to_s3(absolute_size_image_url, s3_bucket_name, f"county_materials/{product_details['name']}/sizes/{product_details['name']}.jpg"),
+        s3_size_image_url = upload_image_stream_to_s3(absolute_size_image_url, s3_bucket_name, f"county_materials/{clean_product_name}/sizes/{clean_product_name}.jpg"),
     else:
-        s3_size_image_url = upload_svg_as_png_to_s3(absolute_size_image_url, s3_bucket_name, f"county_materials/{product_details['name']}/sizes/{product_details['name']}.png"),
+        s3_size_image_url = upload_svg_as_png_to_s3(absolute_size_image_url, s3_bucket_name, f"county_materials/{clean_product_name}/sizes/{clean_product_name}.png"),
 
     size_entry = {
         'name': product_details['name'],
@@ -179,10 +182,10 @@ def get_product_details(product_url, category):
 
 def scrape_catalog():
 
-    category_links = [('https://www.countymaterials.com/en/products/landscaping/retaining-walls', 'Walls and '),
+    category_links = [('https://www.countymaterials.com/en/products/landscaping/retaining-walls', 'Walls'),
                         ('https://www.countymaterials.com/en/products/landscaping/pavers', 'Pavers & Slabs'),
                         ('https://www.countymaterials.com/en/products/landscaping/outdoor-fireplaces-fire-rings-patio-living-products/step-units', 'Steps'),
-                        ('https://www.countymaterials.com/en/products/landscaping/outdoor-fireplaces-fire-rings-patio-living-products/fire-pit-kits-circle-square', 'Fire Pits')]
+                        ('https://www.countymaterials.com/en/products/landscaping/outdoor-fireplaces-fire-rings-patio-living-products/fire-pit-kits-circle-square', 'Outdoor & Fireplace Kits')]
     product_links = []
 
     for link, category in category_links:

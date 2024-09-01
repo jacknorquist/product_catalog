@@ -296,7 +296,7 @@ def get_product_details(product_url, category):
                     clean_color_name = name.replace(' ', '-')
                     image_url = color.get_attribute('src')
                     absolute_image_url = urljoin(base_url, image_url)
-                    s3_image_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{product_details['name']}/colors/{clean_color_name}_.jpg")
+                    s3_image_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{clean_product_name}/colors/{clean_color_name}_.jpg")
 
                     color_entry={
                         'name':name,
@@ -316,7 +316,7 @@ def get_product_details(product_url, category):
                     clean_color_name = name.replace(' ', '-')
                     image_url = color.get_attribute('src')
                     absolute_image_url = urljoin(base_url, image_url)
-                    s3_image_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{product_details['name']}/colors/{clean_color_name}_.jpg")
+                    s3_image_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{clean_product_name}/colors/{clean_color_name}_.jpg")
                     color_entry={
                         'name':name,
                         'thumbnail_image_url':s3_image_url,

@@ -20,12 +20,12 @@ from db.insert_product import insert_product
 s3_bucket_name='productscatalog'
 
 normalized_category = {
-    'Slabs': 'Pavers & Slabs',
-    'Pavers': 'Pavers & Slabs',
-    'Tumbled Pavers': 'Pavers & Slabs'
-    'Permeable Pavements': 'Permeable Pavements',
-    'Walls & Step Units': 'Walls',
-    'Accents': 'Accessories'.
+    'SLABS': 'Pavers & Slabs',
+    'PAVERS': 'Pavers & Slabs',
+    'TUMBLED PAVERS': 'Pavers & Slabs',
+    'PERMEABLE PAVEMENTS': 'Permeable Pavements',
+    'WALLS & STEP UNITS': 'Walls',
+    'ACCENTS': 'Accessories',
 }
 
 
@@ -148,7 +148,7 @@ def get_product_details(product_url, category):
         h4_text = size.find_element(By.TAG_NAME, 'h4').text.strip()
         lines = h4_text.split('\n')
         name = lines[0]
-        clean_size_name = .replace(' ', '-')
+        clean_size_name = name.replace(' ', '-')
         if len(lines)>1:
             dimensions = lines[1]
         else:

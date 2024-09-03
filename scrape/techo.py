@@ -304,7 +304,7 @@ def get_product_details(product_url):
     #     absolute_image_url = urljoin(base_url, img_url)
     #     s3_image_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"products/{img_url.split('/')[-1]}")
     #     images.append(s3_image_url)
-    product_details['normalized_category_name'] = normalized_categories[product_details['category']]
+    product_details['normalized_category_name'] = normalized_category[product_details['category']]
     product_details['colors'] = colors
     product_details['textures'] = textures
     product_details['images'] = main_images

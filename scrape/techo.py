@@ -22,7 +22,7 @@ normalized_category = {
     'Patio Slabs': 'Pavers & Slabs',
     'Pavers': 'Pavers & Slabs',
     'Permeable Pavements': 'Permeable Pavements',
-    'Garrden & Retaining Walls': 'Walls',
+    'Garden & Retaining Walls': 'Walls',
     'Accessories': 'Accessories',
     'Garden Edging Stones': 'Edgers',
     'Wall Caps': 'Caps',

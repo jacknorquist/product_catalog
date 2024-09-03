@@ -153,24 +153,25 @@ def get_product_details(product_url, category):
     description = left_container.find_element(By.CSS_SELECTOR, '#details-desc')
     images = description.find_elements(By.TAG_NAME, 'img')
     for img in images:
+        s3_size_image_url = None
         img_url = img.get_attribute('src')
         if img_url and ("Sizes" in img_url or "sizes" in img_url):
             size_image_url = img_url
             break
-    try:
-        absolute_size_image_url = urljoin(base_url, size_image_url)
-        if '.jpg' in absolute_size_image_url:
-            s3_size_image_url = upload_image_stream_to_s3(absolute_size_image_url, s3_bucket_name, f"county_materials/{clean_product_name}/sizes/{clean_product_name}.jpg"),
-        else:
-            s3_size_image_url = upload_svg_as_png_to_s3(absolute_size_image_url, s3_bucket_name, f"county_materials/{clean_product_name}/sizes/{clean_product_name}.png"),
-    except Exception as e:
-        s3_size_img_url = None
+        try:
+            absolute_size_image_url = urljoin(base_url, size_image_url)
+            if '.jpg' in absolute_size_image_url:
+                s3_size_image_url = upload_image_stream_to_s3(absolute_size_image_url, s3_bucket_name, f"county_materials/{clean_product_name}/sizes/{clean_product_name}.jpg"),
+            else:
+                s3_size_image_url = upload_svg_as_png_to_s3(absolute_size_image_url, s3_bucket_name, f"county_materials/{clean_product_name}/sizes/{clean_product_name}.png"),
+        except Exception as e:
+            s3_size_img_url = None
 
-    size_entry = {
-        'name': product_details['name'],
-        'image': s3_size_image_url,
-        'dimensions': ""
-    }
+        size_entry = {
+            'name': product_details['name'],
+            'image': s3_size_image_url if s3_size_image_url is not None else None,
+            'dimensions': ""
+        }
     product_details['sizes'] = size_entries
 
     ##for safely inserting product

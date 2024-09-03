@@ -26,9 +26,9 @@ normalized_category = {
     'Accessories': 'Accessories',
     'Garden Edging Stones': 'Edgers',
     'Wall Caps': 'Caps',
-    'Pool Coping & Wall Caps': 'Caps'
+    'Pool Coping & Wall Caps': 'Caps',
     'Misc': 'Accessories',
-    'Stone Steps': 'Steps'
+    'Stone Steps': 'Steps',
 
 }
 
@@ -86,6 +86,23 @@ def get_product_details(product_url):
         EC.element_to_be_clickable((By.CSS_SELECTOR, '.onetrust-close-btn-handler.onetrust-close-btn-ui.banner-close-button.ot-close-icon'))
         )
     popup_close.click();
+
+
+    ##close the sample buttone
+    try:
+        iframe = WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, '.go812842568'))
+                    )
+        driver.switch_to.frame(iframe)
+        sample_close = driver.find_element(By.CSS_SELECTOR, '#interactive-close-button')
+        driver.execute_script("arguments[0].click();", sample_close)
+
+
+        driver.switch_to.default_content()
+    except Exception as e:
+        print('didnt find sample iframe')
+
+
 
 
     if product_details['category'] == 'Masonry':
@@ -237,12 +254,13 @@ def get_product_details(product_url):
                 )
                 driver.switch_to.frame(iframe)
                 assist_close = WebDriverWait(driver, 10).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, '.VizExIconButton__AbstractVizExIconButton-rat7tt-0'))
+                EC.element_to_be_clickable((By.CSS_SELECTOR, '.VizExIconButton__AbstractVizExIconButton-sc-34626f-0'))
                 )
                 assist_close.click();
-
                 driver.switch_to.default_content()
+
             except Exception as e:
+                driver.switch_to.default_content()
                 print("iframe not found")
 
             spec_button = driver.find_elements(By.CSS_SELECTOR, '#tab-toggle-65e9a191-5747-4a63-09d6-08dc9f5470cb')
@@ -286,7 +304,7 @@ def get_product_details(product_url):
     #     absolute_image_url = urljoin(base_url, img_url)
     #     s3_image_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"products/{img_url.split('/')[-1]}")
     #     images.append(s3_image_url)
-
+    product_details['normalized_category_name'] = normalized_categories[product_details['category']]
     product_details['colors'] = colors
     product_details['textures'] = textures
     product_details['images'] = main_images
@@ -297,6 +315,7 @@ def get_product_details(product_url):
 
 
     driver.quit()
+    print (product_details)
     return product_details
 
 def scrape_catalog(catalog_url=BASE_URL):

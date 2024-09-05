@@ -21,14 +21,17 @@ s3_bucket_name='productscatalog'
 normalized_category = {
     'Patio Slabs': 'Pavers & Slabs',
     'Pavers': 'Pavers & Slabs',
+    'Commercial Pavers': 'Pavers & Slabs',
     'Permeable Pavements': 'Permeable Pavements',
     'Garden & Retaining Walls': 'Walls',
     'Accessories': 'Accessories',
     'Garden Edging Stones': 'Edgers',
     'Wall Caps': 'Caps',
+    'Commercial Pool Coping & Wall Caps':'Caps',
     'Pool Coping & Wall Caps': 'Caps',
     'Misc': 'Accessories',
     'Stone Steps': 'Steps',
+    'Commercial Patio Slabs': 'Pavers & Slabs'
 
 }
 

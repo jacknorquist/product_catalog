@@ -159,6 +159,7 @@ def get_product_details(product_url, category):
             for circle in circle_navigators:
             # Find the image within this vc_item
                 circle.click()
+                time.sleep(1)
                 image_div = carousel_div.find_element(By.CSS_SELECTOR, '.item.active')
                 image_url = image_div.find_element(By.TAG_NAME, 'img').get_attribute('src')
                 absolute_image_url = urljoin(base_url, image_url)

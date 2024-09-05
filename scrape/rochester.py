@@ -46,6 +46,8 @@ base_url = 'https://rochestercp.com/'
 
 def get_product_links(catalog_url):
     chrome_options = Options()
+    chrome_options.add_argument('--headless')
+    chrome_options.add_argument("--no-sandbox")
     service = Service('./chromedriver')
     driver = webdriver.Chrome(service=service, options=chrome_options)
 
@@ -88,6 +90,8 @@ def get_product_links(catalog_url):
 def get_product_details(product_url, category):
 
     chrome_options = Options()
+    chrome_options.add_argument('--headless')
+    chrome_options.add_argument("--no-sandbox")
     service = Service('./chromedriver')
     driver = webdriver.Chrome(service=service, options=chrome_options)
     driver.get(product_url)

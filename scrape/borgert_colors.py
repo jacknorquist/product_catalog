@@ -19,6 +19,8 @@ s3_bucket_name='productscatalog'
 def get_colors():
 
     chrome_options = Options()
+    chrome_options.add_argument('--headless')
+    chrome_options.add_argument("--no-sandbox")
     service = Service('./chromedriver')
     driver = webdriver.Chrome(service=service, options=chrome_options)
     driver.get('https://www.borgertproducts.com/color-selection-guide/')
@@ -68,6 +70,7 @@ def get_colors():
             'product_name':product_name,
             'accent_color':accent_color
         }
+        print(color_entry)
         colors.append(color_entry)
 
 

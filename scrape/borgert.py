@@ -77,6 +77,7 @@ def get_product_links(catalog_url):
 def get_product_details(product_url, category):
 
     chrome_options = Options()
+    chrome_options.add_argument('--headless')
     service = Service('./chromedriver')
     driver = webdriver.Chrome(service=service, options=chrome_options)
     driver.get(product_url)
@@ -151,6 +152,10 @@ def get_product_details(product_url, category):
         clean_size_name = name.replace(' ', '-')
         if len(lines)>1:
             dimensions = lines[1]
+            print(dimensions, 'first')
+            dimensions = dimensions.replace('\n', ' ').replace('\r', ' ').replace('"', 'in.' ).replace('*', '').replace('”', 'in. ').replace('″', 'in. ')
+            dimensions = ' '.join(dimensions.split())
+            print(dimensions, 'second')
         else:
             dimensions = ""
         image_url = size.find_element(By.CSS_SELECTOR, '.vc-prettyphoto-link').get_attribute('href')

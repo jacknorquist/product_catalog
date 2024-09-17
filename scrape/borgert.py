@@ -164,7 +164,7 @@ def get_product_details(product_url, category):
         size_entry = {
             'name': name,
             'image': s3_size_image_url,
-            'dimensions': dimensions
+            'dimensions': [dimensions]
         }
         size_entries.append(size_entry)
 

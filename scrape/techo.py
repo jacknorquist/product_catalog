@@ -31,7 +31,10 @@ normalized_category = {
     'Pool Coping & Wall Caps': 'Caps',
     'Misc': 'Accessories',
     'Stone Steps': 'Steps',
-    'Commercial Patio Slabs': 'Pavers & Slabs'
+    'Commercial Patio Slabs': 'Pavers & Slabs',
+    'Commercial Garden & Retaining Walls': 'Walls',
+    'Commercial Stone Steps': 'Steps',
+    'Wall Cap': 'Caps'
 
 }
 
@@ -48,7 +51,6 @@ def get_product_links(driver):
     # Use the current URL to create absolute links
     product_links = [urljoin(driver.current_url, a['href']) for a in soup.select('.techobloc-product-card__link') if 'href' in a.attrs]
     return product_links
-    return product_links
 
 
 
@@ -61,7 +63,7 @@ def get_product_details(product_url):
     driver.get(product_url)
 
     # Use WebDriverWait to wait for the page to fully load
-    wait = WebDriverWait(driver, 10)
+    wait = WebDriverWait(driver, 2)
     wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.roc-pdp-title__product-name')))
 
     # Get the initial page source
@@ -73,7 +75,7 @@ def get_product_details(product_url):
     product_name = soup.select_one('.roc-pdp-title__product-name').text.strip()
     product_details['name'] = product_name
     clean_product_name = product_details['name'].replace(' ', '-')
-    print(product_name, 'product nameeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee')
+    print(product_name)
     try:
         product_details['category'] = soup.select_one('.roc-pdp-title__product-category-text').text.strip()
     except Exception as e:
@@ -91,6 +93,7 @@ def get_product_details(product_url):
     popup_close.click();
 
 
+
     ##close the sample buttone
     try:
         iframe = WebDriverWait(driver, 10).until(
@@ -104,6 +107,21 @@ def get_product_details(product_url):
         driver.switch_to.default_content()
     except Exception as e:
         print('didnt find sample iframe')
+
+    try:
+        iframe = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, 'iframe#hubspot-conversations-iframe'))
+        )
+        driver.switch_to.frame(iframe)
+        assist_close = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, '.VizExIconButton__AbstractVizExIconButton-ja80pi-0'))
+        )
+        assist_close.click();
+        driver.switch_to.default_content()
+
+    except Exception as e:
+        driver.switch_to.default_content()
+        print("iframe not found")
 
 
 
@@ -264,7 +282,7 @@ def get_product_details(product_url):
 
             except Exception as e:
                 driver.switch_to.default_content()
-                print("iframe not found")
+
 
             spec_button = driver.find_elements(By.CSS_SELECTOR, '#tab-toggle-65e9a191-5747-4a63-09d6-08dc9f5470cb')
             if len(spec_button)> 0:
@@ -299,7 +317,6 @@ def get_product_details(product_url):
         driver.execute_script("arguments[0].click();", descriptionButton)
         description = descriptionDiv.find_element(By.CSS_SELECTOR, '.roc-pdp-sections__accordion-body').text.strip()
     except Exception as e:
-        print('Description not found')
         description ="Coming Soon"
 ##dont need main images right now
     # for img in driver.find_elements(By.CSS_SELECTOR, '.roc-pdp-asset-scroller__image'):
@@ -318,7 +335,6 @@ def get_product_details(product_url):
 
 
     driver.quit()
-    print (product_details)
     return product_details
 
 def scrape_catalog(catalog_url=BASE_URL):

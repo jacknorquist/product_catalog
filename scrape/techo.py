@@ -34,7 +34,8 @@ normalized_category = {
     'Commercial Patio Slabs': 'Pavers & Slabs',
     'Commercial Garden & Retaining Walls': 'Walls',
     'Commercial Stone Steps': 'Steps',
-    'Wall Cap': 'Caps'
+    'Wall Cap': 'Caps',
+    'Permeable Pavers':'Permeable Pavements',
 
 }
 

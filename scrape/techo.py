@@ -36,6 +36,7 @@ normalized_category = {
     'Commercial Stone Steps': 'Steps',
     'Wall Cap': 'Caps',
     'Permeable Pavers':'Permeable Pavements',
+    'Stepping Stones':'Pavers & Slabs',
 
 }
 

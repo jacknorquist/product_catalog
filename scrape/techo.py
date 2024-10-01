@@ -37,7 +37,8 @@ normalized_category = {
     'Wall Cap': 'Caps',
     'Permeable Pavers':'Permeable Pavements',
     'Stepping Stones':'Pavers & Slabs',
-
+    'Pool Coping': 'Caps',
+    'Commercial Pool Coping': 'Caps'
 }
 
 
@@ -116,7 +117,7 @@ def get_product_details(product_url):
         )
         driver.switch_to.frame(iframe)
         assist_close = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, '.VizExIconButton__AbstractVizExIconButton-ja80pi-0'))
+        EC.element_to_be_clickable((By.CSS_SELECTOR, '.VizExIconButton__AbstractVizExIconButton-sc-1rptov-0 '))
         )
         assist_close.click();
         driver.switch_to.default_content()

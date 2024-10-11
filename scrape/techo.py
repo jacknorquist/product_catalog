@@ -381,11 +381,8 @@ def scrape_catalog(catalog_url=BASE_URL):
     for link in product_links:
         product_details = get_product_details(link)
         if product_details:
-            all_products.append(product_details)
-
-    for product in all_products:
-        insert_product(product, 'Techo Bloc')
-
+            if 'Sample' not in product_details['name']:
+                insert_product(product_details, 'Techo Bloc')
     return all_products
 
 if __name__ == '__main__':

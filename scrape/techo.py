@@ -117,7 +117,7 @@ def get_product_details(product_url):
         )
         driver.switch_to.frame(iframe)
         assist_close = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, '.VizExIconButton__AbstractVizExIconButton-xtuyg2-0'))
+        EC.element_to_be_clickable((By.CSS_SELECTOR, '.VizExIconButton__AbstractVizExIconButton-t249rx-0'))
         )
         assist_close.click();
         driver.switch_to.default_content()

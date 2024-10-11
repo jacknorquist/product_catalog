@@ -29,7 +29,7 @@ normalized_category = {
     'Wall Caps': 'Caps',
     'Commercial Pool Coping & Wall Caps':'Caps',
     'Pool Coping & Wall Caps': 'Caps',
-    'Misc': 'Accessories',
+    'Misc': 'Outdoor & Fireplace Kits',
     'Stone Steps': 'Steps',
     'Commercial Patio Slabs': 'Pavers & Slabs',
     'Commercial Garden & Retaining Walls': 'Walls',
@@ -91,7 +91,7 @@ def get_product_details(product_url):
 
     ##close popup cookie box
     popup_close = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, '.onetrust-close-btn-handler.onetrust-close-btn-ui.banner-close-button.ot-close-icon'))
+        EC.element_to_be_clickable((By.CSS_SELECTOR, '.onetrust-close-btn-handler.onetrust-close-btn-ui'))
         )
     popup_close.click();
 
@@ -134,7 +134,7 @@ def get_product_details(product_url):
         return
 
 
-    if product_details['category'] != 'Accessories' and product_details['name'] != 'Breeo - Zentro Smokeless Steel Insert' and product_details['category'] != 'Misc' and product_details['category'] != 'Outdoor Kitchens':
+    if product_details['category'] != 'Accessories' and product_details['name'] != 'Breeo - Zentro Smokeless Steel Insert' and product_details['category'] != 'Outdoor Kitchens':
         # Use Selenium to interact with elements
         # color_list = driver.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-list')  # First instance for colors
         color_list = WebDriverWait(driver, 10).until(
@@ -286,6 +286,15 @@ def get_product_details(product_url):
 
             except Exception as e:
                 driver.switch_to.default_content()
+
+            try:
+                popup_close = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, '.onetrust-close-btn-handler.onetrust-close-btn-ui'))
+                )
+                popup_close.click();
+            except Exception as e:
+                print('cookie button not found')
+
 
 
             spec_button = driver.find_elements(By.CSS_SELECTOR, '#tab-toggle-65e9a191-5747-4a63-09d6-08dc9f5470cb')

@@ -98,19 +98,20 @@ def get_product_details(product_url):
 
 
     ##close the sample buttone
-    try:
-        iframe = WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, '.go812842568'))
-                    )
-        driver.switch_to.frame(iframe)
-        sample_close = driver.find_element(By.CSS_SELECTOR, '#interactive-close-button')
-        driver.execute_script("arguments[0].click();", sample_close)
+    # try:
+    #     iframe = WebDriverWait(driver, 10).until(
+    #                 EC.presence_of_element_located((By.CSS_SELECTOR, '.go812842568'))
+    #                 )
+    #     driver.switch_to.frame(iframe)
+    #     sample_close = driver.find_element(By.CSS_SELECTOR, '#interactive-close-button')
+    #     driver.execute_script("arguments[0].click();", sample_close)
 
 
-        driver.switch_to.default_content()
-    except Exception as e:
-        print('didnt find sample iframe')
+    #     driver.switch_to.default_content()
+    # except Exception as e:
+    #     print('didnt find sample iframe')
 
+#close the chat widget
     try:
         iframe = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.CSS_SELECTOR, 'iframe#hubspot-conversations-iframe'))

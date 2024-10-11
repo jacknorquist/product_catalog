@@ -81,7 +81,7 @@ class Texture(Base):
     id = Column(Integer, primary_key=True)
     product_id = Column(Integer, ForeignKey('products.id'), nullable=False)
     name = Column(String, nullable=False)
-    image_url = Column(String, nullable=False)  # Thumbnail URL
+    image_url = Column(String, nullable=True)
     product = relationship('Product', back_populates='textures')
 
 

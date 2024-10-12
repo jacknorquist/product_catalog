@@ -78,11 +78,14 @@ def get_product_details(product_url):
     product_name = soup.select_one('.roc-pdp-title__product-name').text.strip()
     product_details['name'] = product_name
     clean_product_name = product_details['name'].replace(' ', '-')
+    product_details['normalized_category_name'] = normalized_category[product_details['category']]
+    clean_category_name = product_details['normalized_cateogory_name'].replace(' ', '-')
     print(product_name)
     try:
         product_details['category'] = soup.select_one('.roc-pdp-title__product-category-text').text.strip()
     except Exception as e:
         product_details['category'] = 'Misc'
+
 
     size_entries = []
     colors = []
@@ -130,11 +133,11 @@ def get_product_details(product_url):
 
 
 
-    if product_details['category'] == 'Masonry':
+    if (product_details['category'] == 'Masonry') or ('Sample' in product_details['name']):
         return
 
 
-    if product_details['category'] != 'Accessories' and product_details['name'] != 'Breeo - Zentro Smokeless Steel Insert' and product_details['category'] != 'Outdoor Kitchens':
+    if product_details['category'] != 'Accessories' and product_details['name'] != 'Breeo - Zentro Smokeless Steel Insert' and product_details['category'] != 'Outdoor Kitchens' and product_details['name'] != 'Forno':
         # Use Selenium to interact with elements
         # color_list = driver.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-list')  # First instance for colors
         color_list = WebDriverWait(driver, 10).until(
@@ -175,8 +178,8 @@ def get_product_details(product_url):
                             print(f"Error processing image item: {e}")
 
                     # Upload thumbnail and main images
-                    s3_thumbnail_img_url = upload_image_stream_to_s3(absolute_thumbnail_img_url, s3_bucket_name, f"techo/{clean_product_name}/colors/{clean_color_name}_thumbnail.jpg")
-                    s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"techo/{clean_product_name}/images/{clean_color_name}_main_{i}.jpg") for i, img_url in enumerate(main_images)]
+                    s3_thumbnail_img_url = upload_image_stream_to_s3(absolute_thumbnail_img_url, s3_bucket_name, f"techo/{clean_category_name}/{clean_product_name}/colors/{clean_color_name}_thumbnail.jpg")
+                    s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"techo/{clean_category_name}/{clean_product_name}/images/{clean_color_name}_main_{i}.jpg") for i, img_url in enumerate(main_images)]
 
                     colors.append({
                         'name': color_name,
@@ -226,8 +229,8 @@ def get_product_details(product_url):
                                 print(f"Error processing image item: {e}")
 
                         # Upload thumbnail and main images
-                        s3_thumbnail_img_url = upload_image_stream_to_s3(absolute_thumbnail_img_url, s3_bucket_name, f"techo/{clean_product_name}/textures/{clean_texture_name}_thumbnail.jpg")
-                        s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"techo/{clean_product_name}/textures/{clean_texture_name}_main_{i}.jpg") for i, img_url in enumerate(main_images)]
+                        s3_thumbnail_img_url = upload_image_stream_to_s3(absolute_thumbnail_img_url, s3_bucket_name, f"techo/{clean_category_name}/{clean_product_name}/textures/{clean_texture_name}_thumbnail.jpg")
+                        s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"techo/{clean_category_name}/{clean_product_name}/textures/{clean_texture_name}_main_{i}.jpg") for i, img_url in enumerate(main_images)]
 
                         textures.append({
                             'name': texture_name,
@@ -262,7 +265,7 @@ def get_product_details(product_url):
                         dimensions = [dim.text.strip() for dim in dimension_elements]
                     else:
                         dimensions = ""
-                    s3_size_img_url = upload_image_stream_to_s3(absolute_size_img_url, s3_bucket_name, f"techo/{clean_product_name}/sizes/{clean_size_name}.png")
+                    s3_size_img_url = upload_image_stream_to_s3(absolute_size_img_url, s3_bucket_name, f"techo/{clean_category_name}/{clean_product_name}/sizes/{clean_size_name}.png")
 
                     # Construct the size entry dictionary
                     size_entry = {
@@ -302,7 +305,7 @@ def get_product_details(product_url):
                 spec_button[0].click()
                 spec_sheet_url=driver.find_element(By.CSS_SELECTOR, '.roc-pdp-technical-documents__download').get_attribute('href')
                 absolute_spec_sheet_url = urljoin(base_url, spec_sheet_url)
-                s3_spec_sheet_url = upload_image_stream_to_s3(absolute_spec_sheet_url, s3_bucket_name, f"techo/{clean_product_name}/spec_sheet.pdf", 'application/pdf')
+                s3_spec_sheet_url = upload_image_stream_to_s3(absolute_spec_sheet_url, s3_bucket_name, f"techo/{clean_category_name}/{clean_product_name}/spec_sheet.pdf", 'application/pdf')
 
 
     else:
@@ -323,7 +326,7 @@ def get_product_details(product_url):
                 print(f"Error processing image item: {e}")
 
                     # Upload thumbnail and main images
-            main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"techo/{clean_product_name}/images/main_{i}.jpg") for i, img_url in enumerate(images)]
+            main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"techo/{clean_category_name}/{clean_product_name}/images/main_{i}.jpg") for i, img_url in enumerate(images)]
     try:
         descriptionDiv = driver.find_element(By.CSS_SELECTOR, '#tab-description-description')
         descriptionButton = descriptionDiv.find_element(By.CSS_SELECTOR, '.roc-pdp-sections__accordion-button')
@@ -337,7 +340,6 @@ def get_product_details(product_url):
     #     absolute_image_url = urljoin(base_url, img_url)
     #     s3_image_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"products/{img_url.split('/')[-1]}")
     #     images.append(s3_image_url)
-    product_details['normalized_category_name'] = normalized_category[product_details['category']]
     product_details['colors'] = colors
     product_details['textures'] = textures
     product_details['images'] = main_images

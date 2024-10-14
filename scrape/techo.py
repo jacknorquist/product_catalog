@@ -78,14 +78,16 @@ def get_product_details(product_url):
     product_name = soup.select_one('.roc-pdp-title__product-name').text.strip()
     product_details['name'] = product_name
     clean_product_name = product_details['name'].replace(' ', '-')
-    product_details['normalized_category_name'] = normalized_category[product_details['category']]
-    clean_category_name = product_details['normalized_cateogory_name'].replace(' ', '-')
     print(product_name)
     try:
         product_details['category'] = soup.select_one('.roc-pdp-title__product-category-text').text.strip()
     except Exception as e:
         product_details['category'] = 'Misc'
 
+    if (product_details['category'] == 'Masonry') or ('Sample' in product_details['name']):
+        return
+    product_details['normalized_category_name'] = normalized_category[product_details['category']]
+    clean_category_name = product_details['normalized_category_name'].replace(' ', '-')
 
     size_entries = []
     colors = []
@@ -133,8 +135,6 @@ def get_product_details(product_url):
 
 
 
-    if (product_details['category'] == 'Masonry') or ('Sample' in product_details['name']):
-        return
 
 
     if product_details['category'] != 'Accessories' and product_details['name'] != 'Breeo - Zentro Smokeless Steel Insert' and product_details['category'] != 'Outdoor Kitchens' and product_details['name'] != 'Forno':

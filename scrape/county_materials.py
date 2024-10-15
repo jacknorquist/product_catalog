@@ -160,6 +160,7 @@ def get_product_details(product_url, category):
             break
         try:
             absolute_size_image_url = urljoin(base_url, size_image_url)
+            print(size_image_url, 'imagesss yrrlll')
             if '.jpg' in absolute_size_image_url:
                 s3_size_image_url = upload_image_stream_to_s3(absolute_size_image_url, s3_bucket_name, f"county_materials/{clean_product_name}/sizes/{clean_product_name}.jpg"),
             else:
@@ -172,6 +173,7 @@ def get_product_details(product_url, category):
             'image': s3_size_image_url if s3_size_image_url is not None else None,
             'dimensions': ""
         }
+        size_entries.append(size_entry)
     product_details['sizes'] = size_entries
 
     ##for safely inserting product
@@ -198,10 +200,8 @@ def scrape_catalog():
     all_products = []
     for link, category in product_links:
         product_details = get_product_details(link, category)
-        all_products.append(product_details)
+        insert_product(product_details, 'County Materials')
 
-    for product in all_products:
-        insert_product(product, 'County Materials')
 
     return all_products
 

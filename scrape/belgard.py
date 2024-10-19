@@ -12,6 +12,19 @@ import time
 import sys
 import os
 
+normalized_category = {
+    'retaining-walls': 'Walls',
+    'Landscape Tiles': 'Pavers & Slabs',
+    'Permeable Pavements': 'Permeable Pavements',
+    'Walls': 'Walls',
+    'Outdoor Living Kits': 'Outdoor & Fireplace Kits',
+    'Accents': 'Accessories',
+    'Edgers': 'Edgers',
+    'Caps & Tops': 'Caps',
+    'Accessories': 'Accessories',
+    'Finishing Touches': 'Accessories',
+}
+
 # Add the root directory of your project to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
 from db.insert_product import insert_product
@@ -60,15 +73,19 @@ def get_product_details(product_url):
     soup = BeautifulSoup(html, 'html.parser')
     s3_spec_sheet_url = None
     product_details = {}
+    product_details['textures'] = []
 
     product_wrapper = driver.find_element(By.CSS_SELECTOR, '.product-section-wrap')
     product_name = product_wrapper.find_element(By.CSS_SELECTOR, 'details__title').text.strip()
     product_details['name'] = product_name
+    clean_product_name = product_details['name'].replace(' ', '-')
 
     ##name
 
     ##category
     product_details['category'] = driver.current_url.split('/')[5]
+
+    product_details['normalized_category_name'] = normalized_category[product_details['category']]
 
 
 
@@ -82,48 +99,59 @@ def get_product_details(product_url):
 
     ##colors
     colors = []
-    colors_div = product_wrapper.find_element(By.CSS_SELECTOR, '.details__section details__section--colors')
-    colors = colors_div.find_elements(By.CSS_SELECTOR, '.details__color')
+    try:
+        colors_div = product_wrapper.find_element(By.CSS_SELECTOR, '.details__section details__section--colors')
+        colors = colors_div.find_elements(By.CSS_SELECTOR, '.details__color')
 
-    for color in colors:
-        name = color.find_element(By.CSS_SELECTOR, '.details__color__title').text.strip()
-        thumbnail_image_url = color.find_element(By.TAG_NAME, 'img').get_attribute('src')
-        s3_img_url = upload_image_stream_to_s3(thumbnail_image_url, s3_bucket_name, f"belgard/{product_details['name']}/colors/{name}_.jpg")
+        for color in colors:
+            name = color.find_element(By.CSS_SELECTOR, '.details__color__title').text.strip()
+            clean_color_name = name.replace(' ', '-')
+            thumbnail_image_url = color.find_element(By.TAG_NAME, 'img').get_attribute('src')
+            s3_img_url = upload_image_stream_to_s3(thumbnail_image_url, s3_bucket_name, f"belgard/{clean_product_name}/colors/{clean_color_name}_.jpg")
 
-        color_entry ={
-            'name': name,
-            'thumbnail_image_url':s3_image_url
-        }
-        colors.append(color_entry)
+            color_entry ={
+                'name': name,
+                'thumbnail_image_url':s3_image_url
+            }
+            colors.append(color_entry)
 
 
-    product_details['colors'] = colors
+        product_details['colors'] = colors
+    except:
+        product_details['colors'] = []
+
+
+
     size_entries = []
 
+    try:
+        product_tab = driver.find_element(By.CSS_SELECTOR, '.product-tabs')
+        spec_div_container= product_tab.find_element(By.CSS_SELECTOR, '.tab-content__specs')
+        spec_divs = spec_div_container.find_elements(By.CSS_SELECTOR, '.tab-content__specs__details')
+
+        for size in spec_divs:
+            name = size.find_element(By.CSS_SELECTOR, '.tab-content__specs__details__title').text.strip()
+            clean_size_name = name.replace(' ', '-')
+            img_div = size.find_element(By.CSS_SELECTOR, '.tab-content__specs__details__image')
+            img_url; - image_div.find_element(By.TAG_NAME, 'img').get_attribute('src')
+            s3_img_url = upload_image_stream_to_s3(thumbnail_image_url, s3_bucket_name, f"belgard/{clean_product_name}/sizes/{clean_size_name}_.jpg")
+            size = [size.find_element(By.CSS_SELECTOR, '.tab-content__specs__details__subtitle').text.strip()]
+
+            size_entry = {
+                'name' = name,
+                'image': image,
+                'dimensions': size
+
+            }
+            size_entries.append(size_entry)
+
+        product_details['sizes'] = size_entries
+    except:
+        product_details['sizes'] = size_entries
 
 
 
-    product_tab = driver.find_element(By.CSS_SELECTOR, '.product-tabs')
-    spec_div_container= product_tab.find_element(By.CSS_SELECTOR, '.tab-content__specs')
-    spec_divs = spec_div_container.find_elements(By.CSS_SELECTOR, '.tab-content__specs__details')
 
-    for size in spec_divs:
-        name = size.find_element(By.CSS_SELECTOR, '.tab-content__specs__details__title').text.strip()
-        img_div = size.find_element(By.CSS_SELECTOR, '.tab-content__specs__details__image')
-        img_url; - image_div.find_element(By.TAG_NAME, 'img').get_attribute('src')
-        s3_img_url = upload_image_stream_to_s3(thumbnail_image_url, s3_bucket_name, f"belgard/{product_details['name']}/sizes/{name}_.jpg")
-        size = [size.find_element(By.CSS_SELECTOR, '.tab-content__specs__details__subtitle').text.strip()]
-
-        size_entry = {
-            'name' = name,
-            'image': image,
-            'dimensions': size
-
-        }
-        size_entries.append(size_entry)
-
-    product_details['sizes'] = size_entries
-    product_details['textures'] = []
 
 
 
@@ -138,219 +166,29 @@ def get_product_details(product_url):
         driver.sleep(2)
         image_div = gallery.find_element(By.CSS_SELECTOR, '.gallery__mainimage zoom')
         image_url = image_div.find_element(By.TAG_NAME, 'img').get_attribute('src')
-        s3_image_url = upload_image_stream_to_s3(image_url, s3_bucket_name, f"belgard/{product_details['name']}/images/{name}_.jpg")
+        s3_image_url = upload_image_stream_to_s3(image_url, s3_bucket_name, f"belgard/{clean_product_name}/images/{name}_.jpg")
         main_images.append(s3_image_url)
 
     product_details['images'] = main_images
 
-    ##close popup cookie box
-    popup_close = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, '.onetrust-close-btn-handler.onetrust-close-btn-ui.banner-close-button.ot-close-icon'))
-        )
-    popup_close.click();
 
-
-
-
-
-    if product_details['category'] != 'Accessories' and product_details['name'] != 'Breeo - Zentro Smokeless Steel Insert' and product_details['category'] != 'Misc':
-        # Use Selenium to interact with elements
-        # color_list = driver.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-list')  # First instance for colors
-        color_list = WebDriverWait(driver, 10).until(
-        EC.presence_of_all_elements_located((By.CSS_SELECTOR, '.roc-pdp-selections__colors-list'))
-        )
-        color_items = color_list[0].find_elements(By.CSS_SELECTOR, '.roc-pdp-selections__colors-item')
-
-        for color_item in color_items:
-            color_name = color_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-name').text.strip()
-            thumbnail_img = color_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-asset').get_attribute('src')
-            absolute_thumbnail_img_url = urljoin(base_url, thumbnail_img)
-
-            # Click the color label to show more images
-            try:
-                color_label = color_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-label')
-                if color_label:
-                    wait.until(EC.element_to_be_clickable(color_label))
-                    driver.execute_script("arguments[0].click();", color_label)
-                    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.roc-pdp-asset-scroller__item')))
-                    time.sleep(3)  # Allow time for the images to load
-
-                    # Collect main images
-                    main_images = []
-                    img_items = driver.find_elements(By.CSS_SELECTOR, '.roc-pdp-asset-scroller__button')
-                    for img_item in img_items:
-                        is_active = 'active' in img_item.get_attribute('class')
-                        if not is_active:
-                            WebDriverWait(driver, 10).until(EC.element_to_be_clickable(img_item))
-                            img_item.click()
-                        try:
-                            main_image_element = WebDriverWait(driver, 10).until(
-                                EC.visibility_of_element_located((By.CSS_SELECTOR, '.roc-pdp-main-image__image.roc-lazy-image--loaded'))
-                            )
-                            img_url = main_image_element.get_attribute('src')
-                            main_images.append(urljoin(base_url, img_url))
-                        except Exception as e:
-                            print(f"Error processing image item: {e}")
-
-                    # Upload thumbnail and main images
-                    s3_thumbnail_img_url = upload_image_stream_to_s3(absolute_thumbnail_img_url, s3_bucket_name, f"techo/{product_name}/colors/{color_name}_thumbnail.jpg")
-                    s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"techo/{product_name}/images/{color_name}_main_{i}.jpg") for i, img_url in enumerate(main_images)]
-
-                    colors.append({
-                        'name': color_name,
-                        'thumbnail_image_url': s3_thumbnail_img_url,
-                        'main_images': s3_main_images
-                    })
-                else:
-                    print(f"Color label for {color_name} not found.")
-            except Exception as e:
-                print(f"Error processing color {color_name}: {e}")
-
-
-        # texture_list = driver.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-list')  # Second instance for textures
-        texture_list = WebDriverWait(driver, 10).until(
-        EC.presence_of_all_elements_located((By.CSS_SELECTOR, '.roc-pdp-selections__colors-list'))
-        )
-        if len(texture_list)>1:
-            texture_items = texture_list[1].find_elements(By.CSS_SELECTOR, '.roc-pdp-selections__colors-item')
-
-            for texture_item in texture_items:
-                texture_name = texture_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-name').text.strip()
-                thumbnail_img = texture_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-asset').get_attribute('src')
-                absolute_thumbnail_img_url = urljoin(base_url, thumbnail_img)
-
-                # Click the texture label to show more images
-                try:
-                    texture_label = texture_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__colors-label')
-                    if texture_label:
-                        wait.until(EC.element_to_be_clickable(texture_label))
-                        driver.execute_script("arguments[0].click();", texture_label)
-                        wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.roc-pdp-asset-scroller__item')))
-                        time.sleep(4)  # Allow time for the images to load
-
-                        # Collect main images
-                        main_images = []
-                        img_items = driver.find_elements(By.CSS_SELECTOR, '.roc-pdp-asset-scroller__button roc-pdp-asset-scroller__button--active')
-                        for img_item in img_items:
-                            img_item.click()
-                            try:
-                                main_image_element = WebDriverWait(driver, 10).until(
-                                    EC.visibility_of_element_located((By.CSS_SELECTOR, '.roc-pdp-main-image__image.roc-lazy-image--loaded'))
-                                )
-                                img_url = main_image_element.get_attribute('src')
-                                main_images.append(urljoin(base_url, img_url))
-                            except Exception as e:
-                                print(f"Error processing image item: {e}")
-
-                        # Upload thumbnail and main images
-                        s3_thumbnail_img_url = upload_image_stream_to_s3(absolute_thumbnail_img_url, s3_bucket_name, f"techo/{product_name}/textures/{texture_name}_thumbnail.jpg")
-                        s3_main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"techo/{product_name}/textures/{texture_name}_main_{i}.jpg") for i, img_url in enumerate(main_images)]
-
-                        textures.append({
-                            'name': texture_name,
-                            'thumbnail_image_url': s3_thumbnail_img_url,
-                            'main_images': s3_main_images
-                        })
-                    else:
-                        print(f"Texture label for {texture_name} not found.")
-                except Exception as e:
-                    print(f"Error processing texture {texture_name}: {e}")
-
-        # if product_details['name'] != 'Maya' and product_details['category'] != 'Pool Coping & Wall Caps' and product_details['category'] != 'Stone Steps' and product_details['category'] != 'Garden Edging Stones' and product_details['name'] != 'Borealis Commercial' and product_details['name'] != 'Raffinato' and product_details['name'] != 'York' and product_details['name'] != 'Sandstone Step' and product_details['category'] != 'Pool Coping' and product_details['category'] != 'Wall Cap' and product_details['category'] != 'Fire Pits and Burners':
-            sizes_list_container = driver.find_elements(By.CLASS_NAME, 'roc-pdp-selections__sizes-list')
-            # Find the container with the sizes list
-
-            # Find all size items within the container
-            if len(sizes_list_container)>0:
-                size_items = sizes_list_container[0].find_elements(By.CLASS_NAME, 'roc-pdp-selections__sizes-item')
-                # Initialize a list to store the size entries
-
-                # Loop through each size item to extract information
-                for size_item in size_items:
-                    size_img = size_item.find_element(By.CSS_SELECTOR, '.roc-pdp-selections__sizes-asset').get_attribute('src')
-                    absolute_size_img_url = urljoin(base_url, size_img)
-
-                    name = size_item.find_element(By.CSS_SELECTOR,'.roc-pdp-selections__sizes-product').text.strip()
-                    # Find and extract all DIMENSIONS
-                    dimension_elements = size_item.find_elements(By.CLASS_NAME, 'roc-pdp-selections__sizes-size')
-                    if dimension_elements:
-                        dimensions = [dim.text.strip() for dim in dimension_elements]
-                    else:
-                        dimensions = ""
-                    s3_size_img_url = upload_image_stream_to_s3(absolute_size_img_url, s3_bucket_name, f"techo/{product_name}/sizes/{name}.png")
-
-                    # Construct the size entry dictionary
-                    size_entry = {
-                        'name': name,
-                        'image': s3_size_img_url,
-                        'dimensions': dimensions
-                    }
-
-                    # Add the size entry to the list
-                    size_entries.append(size_entry)
-            try:
-                iframe = WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, 'iframe#hubspot-conversations-iframe'))
-                )
-                driver.switch_to.frame(iframe)
-                assist_close = WebDriverWait(driver, 10).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, '.VizExIconButton__AbstractVizExIconButton-rat7tt-0'))
-                )
-                assist_close.click();
-
-                driver.switch_to.default_content()
-            except Exception as e:
-                print("iframe not found")
-
-            spec_button = driver.find_elements(By.CSS_SELECTOR, '#tab-toggle-65e9a191-5747-4a63-09d6-08dc9f5470cb')
-            if len(spec_button)> 0:
-                spec_button[0].click()
-                spec_sheet_url=driver.find_element(By.CSS_SELECTOR, '.roc-pdp-technical-documents__download').get_attribute('href')
-                absolute_spec_sheet_url = urljoin(base_url, spec_sheet_url)
-                s3_spec_sheet_url = upload_image_stream_to_s3(absolute_spec_sheet_url, s3_bucket_name, f"techo/{product_name}/spec_sheet.pdf", 'application/pdf')
-
-
-    else:
-        images = []
-        img_items = driver.find_elements(By.CSS_SELECTOR, '.roc-pdp-asset-scroller__button')
-        for img_item in img_items:
-            is_active = 'active' in img_item.get_attribute('class')
-            if not is_active:
-                WebDriverWait(driver, 10).until(EC.element_to_be_clickable(img_item))
-                img_item.click()
-            try:
-                main_image_element = WebDriverWait(driver, 10).until(
-                    EC.visibility_of_element_located((By.CSS_SELECTOR, '.roc-pdp-main-image__image.roc-lazy-image--loaded'))
-                )
-                img_url = main_image_element.get_attribute('src')
-                images.append(urljoin(base_url, img_url))
-            except Exception as e:
-                print(f"Error processing image item: {e}")
-
-                    # Upload thumbnail and main images
-            main_images = [upload_image_stream_to_s3(img_url, s3_bucket_name, f"techo/{product_name}/images/main_{i}.jpg") for i, img_url in enumerate(images)]
     try:
-        descriptionDiv = driver.find_element(By.CSS_SELECTOR, '#tab-description-description')
-        descriptionButton = descriptionDiv.find_element(By.CSS_SELECTOR, '.roc-pdp-sections__accordion-button')
-        driver.execute_script("arguments[0].click();", descriptionButton)
-        description = descriptionDiv.find_element(By.CSS_SELECTOR, '.roc-pdp-sections__accordion-body').text.strip()
-    except Exception as e:
-        print('Description not found')
-        description ="Coming Soon"
-##dont need main images right now
-    # for img in driver.find_elements(By.CSS_SELECTOR, '.roc-pdp-asset-scroller__image'):
-    #     img_url = img.get_attribute('src')
-    #     absolute_image_url = urljoin(base_url, img_url)
-    #     s3_image_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"products/{img_url.split('/')[-1]}")
-    #     images.append(s3_image_url)
-
-    product_details['colors'] = colors
-    product_details['textures'] = textures
-    product_details['images'] = main_images
-    product_details['description'] = description
-    product_details['sizes'] = size_entries
-    if s3_spec_sheet_url:
+        product_tab_div = driver.find_element(By.CSS_SELECTOR, '.product-tabs')
+        product_tab = product_tab_div.find_elements(By.CSS_SELECTOR, '.product-tabs__tabs-tab')[1]
+        product_tab.click()
+        driver.sleep(2)
+        content_2= = product_tab_div.find_element(By.CSS_SELECTOR, '.tab-content-2 ')
+        pdf_div = content_div.find_element(By.CSS_SELECTOR, '.tab-content__ti__downloads__download__title')
+        pdf_link = pdf_div.find_element(By.TAG_NAME, 'a').get_attribute('href')
+        s3_spec_sheet_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{clean_product_name}/spec_sheet.pdf", 'application/pdf')
         product_details['spec_sheet'] = s3_spec_sheet_url
+    except:
+        product_details['spec_sheet'] = None
+
+
+
+
+
 
 
     driver.quit()

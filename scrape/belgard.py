@@ -34,8 +34,13 @@ def get_product_links(driver):
 
 
     for product in product_divs:
-        link = product.find_element(By.TAG_NAME, 'a').get_attribute('href')
-        product_links.append(link)
+        try:
+            # Find the closest parent link (anchor tag)
+            picture= product.find_element(By.TAG_NAME, 'picture')
+            link = picture.find_element(By.TAG_NAME, '').get_attribute('href')
+            product_links.append(link)
+        except Exception as e:
+            print(f"Error finding link for product: {e}")
 
     return product_links
 
@@ -48,42 +53,36 @@ def get_product_details(product_url):
 
     # Use WebDriverWait to wait for the page to fully load
     wait = WebDriverWait(driver, 10)
-    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.roc-pdp-title__product-name')))
+
 
     # Get the initial page source
     html = driver.page_source
     soup = BeautifulSoup(html, 'html.parser')
-    base_url = 'https://www.techo-bloc.com'
     s3_spec_sheet_url = None
     product_details = {}
 
-    ##name
-    product_name =  driver.find_element(By.CSS_SELECTOR, '.details__title').text.strip()
+    product_wrapper = driver.find_element(By.CSS_SELECTOR, '.product-section-wrap')
+    product_name = product_wrapper.find_element(By.CSS_SELECTOR, 'details__title').text.strip()
     product_details['name'] = product_name
 
+    ##name
+
     ##category
-    parsed_url = urlparse(url)
-    path = parsed_url.path
-    segments = path.strip('/').split('/')
-    if len(segments) >= 3:
-        category = segments[2]
-        product_details['category'] = category
-    else:
-        return product_details['category'] = ""
+    product_details['category'] = driver.current_url.split('/')[5]
 
 
 
-    details_div = driver.find_element(By.CSS_SELECTOR, '.details')
+
 
     ##description
-    description_div = details_div.find_element(By.CSS_SELECTOR, '.details-text')
-    description = description_div.find_element(By.TAG_NAME, 'p').text.strip()
+    description_text_div = product_wrapper.find_element(By.CSS_SELECTOR, '.details__text')
+    description = description_text_div.find_elements(By.TAG_NAME, 'p')[0].text.strip()
     product_details['description'] = description
 
 
     ##colors
     colors = []
-    colors_div = driver.find_element(By.CSS_SELECTOR, '.details__section details__section--colors')
+    colors_div = product_wrapper.find_element(By.CSS_SELECTOR, '.details__section details__section--colors')
     colors = colors_div.find_elements(By.CSS_SELECTOR, '.details__color')
 
     for color in colors:
@@ -92,17 +91,57 @@ def get_product_details(product_url):
         s3_img_url = upload_image_stream_to_s3(thumbnail_image_url, s3_bucket_name, f"belgard/{product_details['name']}/colors/{name}_.jpg")
 
         color_entry ={
-            name = name,
-            thumbnail_image_url = s3_image_url
+            'name': name,
+            'thumbnail_image_url':s3_image_url
         }
         colors.append(color_entry)
 
 
-
+    product_details['colors'] = colors
     size_entries = []
-    colors = []
-    textures = []
+
+
+
+
+    product_tab = driver.find_element(By.CSS_SELECTOR, '.product-tabs')
+    spec_div_container= product_tab.find_element(By.CSS_SELECTOR, '.tab-content__specs')
+    spec_divs = spec_div_container.find_elements(By.CSS_SELECTOR, '.tab-content__specs__details')
+
+    for size in spec_divs:
+        name = size.find_element(By.CSS_SELECTOR, '.tab-content__specs__details__title').text.strip()
+        img_div = size.find_element(By.CSS_SELECTOR, '.tab-content__specs__details__image')
+        img_url; - image_div.find_element(By.TAG_NAME, 'img').get_attribute('src')
+        s3_img_url = upload_image_stream_to_s3(thumbnail_image_url, s3_bucket_name, f"belgard/{product_details['name']}/sizes/{name}_.jpg")
+        size = [size.find_element(By.CSS_SELECTOR, '.tab-content__specs__details__subtitle').text.strip()]
+
+        size_entry = {
+            'name' = name,
+            'image': image,
+            'dimensions': size
+
+        }
+        size_entries.append(size_entry)
+
+    product_details['sizes'] = size_entries
+    product_details['textures'] = []
+
+
+
     main_images=[]
+
+    gallery = product_wrapper.find_element(By.CSS_SELECTOR, '.gallery')
+    thumbnails_divs = gallery.find_element(By.CSS_SELECTOR, '.gallery__thumbnails')
+    thumbnials = thumbnails_divs.find_elements(By.CSS_SELECTOR, '.gallery__thumbnail')
+
+    for thumnail in thumbnails_divs:
+        thumbnail.click()
+        driver.sleep(2)
+        image_div = gallery.find_element(By.CSS_SELECTOR, '.gallery__mainimage zoom')
+        image_url = image_div.find_element(By.TAG_NAME, 'img').get_attribute('src')
+        s3_image_url = upload_image_stream_to_s3(image_url, s3_bucket_name, f"belgard/{product_details['name']}/images/{name}_.jpg")
+        main_images.append(s3_image_url)
+
+    product_details['images'] = main_images
 
     ##close popup cookie box
     popup_close = WebDriverWait(driver, 10).until(
@@ -318,6 +357,8 @@ def get_product_details(product_url):
     return product_details
 
 def scrape_catalog(catalog_url=BASE_URL):
+
+    category_links = ['https://www.belgard.com/products/pavers/', 'https://www.belgard.com/products/permeable-pavers/', 'https://www.belgard.com/products/porcelain-pavers/', 'https://www.belgard.com/products/retaining-walls/', 'https://www.belgard.com/products/accessories/', 'https://www.belgard.com/products/outdoor-kitchens-and-fireplaces/', 'https://www.belgard.com/products/fire-pit-kits/' ]
     # Setup WebDriver
     chrome_options = Options()
     service = Service('./chromedriver')
@@ -330,6 +371,7 @@ def scrape_catalog(catalog_url=BASE_URL):
     product_links = []
     page_number = 1
     max_pages = 10
+
 
     while page_number <= max_pages:
         # Extract product links from the current page
@@ -349,6 +391,8 @@ def scrape_catalog(catalog_url=BASE_URL):
             break
 
     driver.quit()
+
+
 
 
 

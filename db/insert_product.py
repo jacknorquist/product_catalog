@@ -5,7 +5,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
 from db.models import Session, Product, Color, Texture, ProductImage, Manufacturer, Size
 
-def insert_product(product_details, manufacturer_name):
+def insert_product(product_details, manufacturer_name, db_name):
     # Create a new session
     session = Session()
     # Get the manufacturer

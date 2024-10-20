@@ -15,7 +15,8 @@ manufacturers_data = [
     "Techo Bloc",
     "County Materials",
     "Borgert",
-    "Rochester Concrete Products"
+    "Rochester Concrete Products".
+    "Belgard",
 ]
 
 # Data to insert into normalized_categories

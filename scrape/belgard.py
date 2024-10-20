@@ -14,6 +14,22 @@ import os
 
 normalized_category = {
     'retaining-walls': 'Walls',
+    'fire-features': 'Outdoor & Fireplace Kits',
+    'water-features': 'Outdoor & Fireplace Kits',
+    'permeable-pavers': 'Permeable Pavements',
+    'pavers': 'Pavers & Slabs',
+    'outdoor-kitchens-and-fireplaces': '',
+    'pergola-panels': 'Accessories',
+    'lighting': 'Accessories'.
+    'outdoor-kitchens': 'Outdoor & Fireplace Kits',
+    'outdoor-kitchens-and-fireplaces': 'Outdoor & Fireplace Kits',
+    'fire-pit-kits': 'Outdoor & Fireplace Kits',
+    'element-accessories': 'Accessories',
+    'outdoor-cooking': 'Accessories',
+    'bar-sink': 'Accessories',
+    'gas-inserts': 'Outdoor & Fireplace Kits',
+    'accessories':'Accessories',
+    'porcelain-pavers': 'Pavers & Slabs'
     'Landscape Tiles': 'Pavers & Slabs',
     'Permeable Pavements': 'Permeable Pavements',
     'Walls': 'Walls',
@@ -86,6 +102,16 @@ def get_product_details(product_url):
     product_details['category'] = driver.current_url.split('/')[5]
 
     product_details['normalized_category_name'] = normalized_category[product_details['category']]
+
+    if 'Edger' in product_details['name']:
+        product_details['normalized_category_name'] = 'Edgers'
+    if 'Caps' in product_details['name']:
+        product_details['normalized_category_name'] = 'Caps'
+    if 'Coping' in product_details['name']:
+        product_details['normalized_category_name'] = 'Caps'
+    if 'Step' in product_details['name']:
+        product_details['normalized_category_name'] = 'Steps'
+
 
 
 

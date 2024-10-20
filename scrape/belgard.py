@@ -20,7 +20,7 @@ normalized_category = {
     'pavers': 'Pavers & Slabs',
     'outdoor-kitchens-and-fireplaces': '',
     'pergola-panels': 'Accessories',
-    'lighting': 'Accessories'.
+    'lighting': 'Accessories',
     'outdoor-kitchens': 'Outdoor & Fireplace Kits',
     'outdoor-kitchens-and-fireplaces': 'Outdoor & Fireplace Kits',
     'fire-pit-kits': 'Outdoor & Fireplace Kits',
@@ -29,7 +29,7 @@ normalized_category = {
     'bar-sink': 'Accessories',
     'gas-inserts': 'Outdoor & Fireplace Kits',
     'accessories':'Accessories',
-    'porcelain-pavers': 'Pavers & Slabs'
+    'porcelain-pavers': 'Pavers & Slabs',
     'Landscape Tiles': 'Pavers & Slabs',
     'Permeable Pavements': 'Permeable Pavements',
     'Walls': 'Walls',
@@ -164,7 +164,7 @@ def get_product_details(product_url):
             size = [size.find_element(By.CSS_SELECTOR, '.tab-content__specs__details__subtitle').text.strip()]
 
             size_entry = {
-                'name' = name,
+                'name': name,
                 'image': image,
                 'dimensions': size
 
@@ -203,7 +203,7 @@ def get_product_details(product_url):
         product_tab = product_tab_div.find_elements(By.CSS_SELECTOR, '.product-tabs__tabs-tab')[1]
         product_tab.click()
         driver.sleep(2)
-        content_2= = product_tab_div.find_element(By.CSS_SELECTOR, '.tab-content-2 ')
+        content_2=  product_tab_div.find_element(By.CSS_SELECTOR, '.tab-content-2 ')
         pdf_div = content_div.find_element(By.CSS_SELECTOR, '.tab-content__ti__downloads__download__title')
         pdf_link = pdf_div.find_element(By.TAG_NAME, 'a').get_attribute('href')
         s3_spec_sheet_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{clean_product_name}/spec_sheet.pdf", 'application/pdf')

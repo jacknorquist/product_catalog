@@ -52,21 +52,23 @@ s3_bucket_name='productscatalog'
 # Base URL for the product catalog
 BASE_URL = 'https://www.belgard.com/products/'  # Replace with actual catalog URL
 
-def get_product_links(driver):
+def get_product_links(driver, page_link):
+
+    driver.get(page_link)
     # Retrieve the current page source
     html = driver.page_source
     soup = BeautifulSoup(html, 'html.parser')
 
     product_links = []
 
-    product_divs = driver.find_elements(By.CSS_SELECTOR, '.grid-item-figure')
+    prodcut_container = driver.find_element(By.CSS_SELECTOR, '.grid-component-container')
+    product_divs = prodcut_container.find_elements(By.CSS_SELECTOR, '.type--belgard_products')
 
 
     for product in product_divs:
         try:
             # Find the closest parent link (anchor tag)
-            picture= product.find_element(By.TAG_NAME, 'picture')
-            link = picture.find_element(By.TAG_NAME, '').get_attribute('href')
+            link = product.find_element(By.XPATH, './a').get_attribute('href')
             product_links.append(link)
         except Exception as e:
             print(f"Error finding link for product: {e}")
@@ -81,7 +83,9 @@ def get_product_details(product_url):
     driver.get(product_url)
 
     # Use WebDriverWait to wait for the page to fully load
-    wait = WebDriverWait(driver, 10)
+    wait = WebDriverWait(driver, 2)
+
+
 
 
     # Get the initial page source
@@ -92,14 +96,14 @@ def get_product_details(product_url):
     product_details['textures'] = []
 
     product_wrapper = driver.find_element(By.CSS_SELECTOR, '.product-section-wrap')
-    product_name = product_wrapper.find_element(By.CSS_SELECTOR, 'details__title').text.strip()
+    product_name = product_wrapper.find_element(By.CSS_SELECTOR, '.details__title').text.strip()
     product_details['name'] = product_name
     clean_product_name = product_details['name'].replace(' ', '-')
 
     ##name
 
     ##category
-    product_details['category'] = driver.current_url.split('/')[5]
+    product_details['category'] = driver.current_url.split('/')[4]
 
     product_details['normalized_category_name'] = normalized_category[product_details['category']]
 
@@ -185,12 +189,11 @@ def get_product_details(product_url):
 
     gallery = product_wrapper.find_element(By.CSS_SELECTOR, '.gallery')
     thumbnails_divs = gallery.find_element(By.CSS_SELECTOR, '.gallery__thumbnails')
-    thumbnials = thumbnails_divs.find_elements(By.CSS_SELECTOR, '.gallery__thumbnail')
+    thumbnails = thumbnails_divs.find_elements(By.CSS_SELECTOR, '.gallery__thumbnail')
 
-    for thumnail in thumbnails_divs:
-        thumbnail.click()
-        driver.sleep(2)
-        image_div = gallery.find_element(By.CSS_SELECTOR, '.gallery__mainimage zoom')
+    for thumbnail in thumbnails:
+        driver.execute_script("arguments[0].click();", thumbnail)
+        image_div = gallery.find_element(By.CSS_SELECTOR, '.gallery__mainimage.zoom')
         image_url = image_div.find_element(By.TAG_NAME, 'img').get_attribute('src')
         s3_image_url = upload_image_stream_to_s3(image_url, s3_bucket_name, f"belgard/{clean_product_name}/images/{name}_.jpg")
         main_images.append(s3_image_url)
@@ -201,8 +204,7 @@ def get_product_details(product_url):
     try:
         product_tab_div = driver.find_element(By.CSS_SELECTOR, '.product-tabs')
         product_tab = product_tab_div.find_elements(By.CSS_SELECTOR, '.product-tabs__tabs-tab')[1]
-        product_tab.click()
-        driver.sleep(2)
+        driver.execute_script("arguments[0].click();", product_tab)
         content_2=  product_tab_div.find_element(By.CSS_SELECTOR, '.tab-content-2 ')
         pdf_div = content_div.find_element(By.CSS_SELECTOR, '.tab-content__ti__downloads__download__title')
         pdf_link = pdf_div.find_element(By.TAG_NAME, 'a').get_attribute('href')
@@ -222,37 +224,31 @@ def get_product_details(product_url):
 
 def scrape_catalog(catalog_url=BASE_URL):
 
-    category_links = ['https://www.belgard.com/products/pavers/', 'https://www.belgard.com/products/permeable-pavers/', 'https://www.belgard.com/products/porcelain-pavers/', 'https://www.belgard.com/products/retaining-walls/', 'https://www.belgard.com/products/accessories/', 'https://www.belgard.com/products/outdoor-kitchens-and-fireplaces/', 'https://www.belgard.com/products/fire-pit-kits/' ]
+    links = [
+                    'https://www.belgard.com/products/',
+                    'https://www.belgard.com/products/?_paged=2',
+                    'https://www.belgard.com/products/?_paged=3',
+                    'https://www.belgard.com/products/?_paged=4',
+                    'https://www.belgard.com/products/?_paged=5',
+                    'https://www.belgard.com/products/?_paged=6',
+                    'https://www.belgard.com/products/?_paged=7',
+                    'https://www.belgard.com/products/?_paged=8',
+                    'https://www.belgard.com/products/?_paged=9',
+                    'https://www.belgard.com/products/?_paged=10' ]
     # Setup WebDriver
     chrome_options = Options()
     service = Service('./chromedriver')
     driver = webdriver.Chrome(service=service, options=chrome_options)
     wait = WebDriverWait(driver, 10)
 
-    # Start at the catalog URL
-    driver.get(catalog_url)
-
     product_links = []
-    page_number = 1
-    max_pages = 10
+    for link in links:
+        group =  get_product_links(driver, link)
+        product_links.extend(group)
 
 
-    while page_number <= max_pages:
-        # Extract product links from the current page
-        page_links = get_product_links(driver)
-        product_links.extend(page_links)
-
-        # Check for the "Next" button and handle pagination
-        try:
-            next_button = wait.until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, '.facetwp-page arrow-next'))  # Adjust selector as needed
-            )
-            next_button.click()
-            time.sleep(2)  # Wait for the page to load and new URL to be set
-            page_number += 1
-        except Exception as e:
-            print(f"No more pages or error: {e}")
-            break
+    # Start at the catalog URL
+    # driver.get(catalog_url)
 
     driver.quit()
 
@@ -265,10 +261,9 @@ def scrape_catalog(catalog_url=BASE_URL):
     # insert_product(product_details, 'Techo Bloc')
     for link in product_links:
         product_details = get_product_details(link)
-        all_products.append(product_details)
+        # all_products.append(product_details)
+        insert_product(product_details, 'Belgard')
 
-    for product in all_products:
-        insert_product(product, 'Techo Bloc')
 
     return all_products
 

@@ -107,13 +107,13 @@ def get_product_details(product_url):
 
     product_details['normalized_category_name'] = normalized_category[product_details['category']]
 
-    if 'Edger' in product_details['name']:
+    if 'EDGER' in product_details['name']:
         product_details['normalized_category_name'] = 'Edgers'
-    if 'Caps' in product_details['name']:
+    if 'CAPS' in product_details['name']:
         product_details['normalized_category_name'] = 'Caps'
-    if 'Coping' in product_details['name']:
+    if 'COPING' in product_details['name']:
         product_details['normalized_category_name'] = 'Caps'
-    if 'Step' in product_details['name']:
+    if 'STEP' in product_details['name']:
         product_details['normalized_category_name'] = 'Steps'
 
 
@@ -129,26 +129,26 @@ def get_product_details(product_url):
 
     ##colors
     colors = []
-    try:
-        colors_div = product_wrapper.find_element(By.CSS_SELECTOR, '.details__section details__section--colors')
-        colors = colors_div.find_elements(By.CSS_SELECTOR, '.details__color')
+    # try:
+    colors_div = product_wrapper.find_element(By.CSS_SELECTOR, '.details__section.details__section--colors')
+    colors = colors_div.find_elements(By.CSS_SELECTOR, '.details__color')
 
-        for color in colors:
-            name = color.find_element(By.CSS_SELECTOR, '.details__color__title').text.strip()
-            clean_color_name = name.replace(' ', '-')
-            thumbnail_image_url = color.find_element(By.TAG_NAME, 'img').get_attribute('src')
-            s3_img_url = upload_image_stream_to_s3(thumbnail_image_url, s3_bucket_name, f"belgard/{clean_product_name}/colors/{clean_color_name}_.jpg")
+    for color in colors:
+        name = color.find_element(By.CSS_SELECTOR, '.details__color__title').text.strip()
+        clean_color_name = name.replace(' ', '-')
+        thumbnail_image_url = color.find_element(By.TAG_NAME, 'img').get_attribute('src')
+        s3_img_url = upload_image_stream_to_s3(thumbnail_image_url, s3_bucket_name, f"belgard/{clean_product_name}/colors/{clean_color_name}_.jpg")
 
-            color_entry ={
-                'name': name,
-                'thumbnail_image_url':s3_image_url
-            }
-            colors.append(color_entry)
+        color_entry ={
+            'name': name,
+            'thumbnail_image_url':s3_img_url
+        }
+        colors.append(color_entry)
 
 
-        product_details['colors'] = colors
-    except:
-        product_details['colors'] = []
+    product_details['colors'] = colors
+    # except:
+    #     product_details['colors'] = []
 
 
 

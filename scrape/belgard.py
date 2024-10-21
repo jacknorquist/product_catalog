@@ -99,6 +99,7 @@ def get_product_details(product_url):
     product_name = product_wrapper.find_element(By.CSS_SELECTOR, '.details__title').text.strip()
     product_details['name'] = product_name
     clean_product_name = product_details['name'].replace(' ', '-')
+    print (clean_product_name)
 
     ##name
 
@@ -128,27 +129,33 @@ def get_product_details(product_url):
 
 
     ##colors
-    colors = []
-    # try:
-    colors_div = product_wrapper.find_element(By.CSS_SELECTOR, '.details__section.details__section--colors')
-    colors = colors_div.find_elements(By.CSS_SELECTOR, '.details__color')
+    colors_list = []
+    try:
+        colors_div = product_wrapper.find_element(By.CSS_SELECTOR, '.details__section.details__section--colors')
+        colors = colors_div.find_elements(By.CSS_SELECTOR, '.details__color')
 
-    for color in colors:
-        name = color.find_element(By.CSS_SELECTOR, '.details__color__title').text.strip()
-        clean_color_name = name.replace(' ', '-')
-        thumbnail_image_url = color.find_element(By.TAG_NAME, 'img').get_attribute('src')
-        s3_img_url = upload_image_stream_to_s3(thumbnail_image_url, s3_bucket_name, f"belgard/{clean_product_name}/colors/{clean_color_name}_.jpg")
+        for color in colors:
+            name = color.find_element(By.CSS_SELECTOR, '.details__color__title').text.strip()
+            clean_color_name = name.replace(' ', '-')
+            thumbnail_image_url = color.find_element(By.TAG_NAME, 'img').get_attribute('src')
+            s3_img_url = upload_image_stream_to_s3(thumbnail_image_url, s3_bucket_name, f"belgard/{clean_product_name}/colors/{clean_color_name}_.jpg")
+            driver.execute_script("arguments[0].click();", color)
+            gallery = product_wrapper.find_element(By.CSS_SELECTOR, '.gallery')
+            image_div = gallery.find_element(By.CSS_SELECTOR, '.gallery__mainimage.zoom')
+            main_image_url = image_div.find_element(By.TAG_NAME, 'img').get_attribute('src')
+            color_main_image_url = upload_image_stream_to_s3(main_image_url, s3_bucket_name, f"belgard/{clean_product_name}/images/{clean_color_name}_main.jpg")
 
-        color_entry ={
-            'name': name,
-            'thumbnail_image_url':s3_img_url
-        }
-        colors.append(color_entry)
+            color_entry ={
+                'name': name,
+                'thumbnail_image_url':s3_img_url,
+                'main_images':[color_main_image_url]
+            }
+            colors_list.append(color_entry)
 
 
-    product_details['colors'] = colors
-    # except:
-    #     product_details['colors'] = []
+            product_details['colors'] = colors_list
+    except:
+        product_details['colors'] = []
 
 
 
@@ -163,13 +170,13 @@ def get_product_details(product_url):
             name = size.find_element(By.CSS_SELECTOR, '.tab-content__specs__details__title').text.strip()
             clean_size_name = name.replace(' ', '-')
             img_div = size.find_element(By.CSS_SELECTOR, '.tab-content__specs__details__image')
-            img_url; - image_div.find_element(By.TAG_NAME, 'img').get_attribute('src')
+            img_url = img_div.find_element(By.TAG_NAME, 'img').get_attribute('src')
             s3_img_url = upload_image_stream_to_s3(thumbnail_image_url, s3_bucket_name, f"belgard/{clean_product_name}/sizes/{clean_size_name}_.jpg")
             size = [size.find_element(By.CSS_SELECTOR, '.tab-content__specs__details__subtitle').text.strip()]
 
             size_entry = {
                 'name': name,
-                'image': image,
+                'image': s3_img_url,
                 'dimensions': size
 
             }
@@ -191,11 +198,11 @@ def get_product_details(product_url):
     thumbnails_divs = gallery.find_element(By.CSS_SELECTOR, '.gallery__thumbnails')
     thumbnails = thumbnails_divs.find_elements(By.CSS_SELECTOR, '.gallery__thumbnail')
 
-    for thumbnail in thumbnails:
+    for i, thumbnail in enumerate(thumbnails):
         driver.execute_script("arguments[0].click();", thumbnail)
         image_div = gallery.find_element(By.CSS_SELECTOR, '.gallery__mainimage.zoom')
         image_url = image_div.find_element(By.TAG_NAME, 'img').get_attribute('src')
-        s3_image_url = upload_image_stream_to_s3(image_url, s3_bucket_name, f"belgard/{clean_product_name}/images/{name}_.jpg")
+        s3_image_url = upload_image_stream_to_s3(image_url, s3_bucket_name, f"belgard/{clean_product_name}/images/main_{i}.jpg")
         main_images.append(s3_image_url)
 
     product_details['images'] = main_images
@@ -206,9 +213,9 @@ def get_product_details(product_url):
         product_tab = product_tab_div.find_elements(By.CSS_SELECTOR, '.product-tabs__tabs-tab')[1]
         driver.execute_script("arguments[0].click();", product_tab)
         content_2=  product_tab_div.find_element(By.CSS_SELECTOR, '.tab-content-2 ')
-        pdf_div = content_div.find_element(By.CSS_SELECTOR, '.tab-content__ti__downloads__download__title')
+        pdf_div = content_2.find_element(By.CSS_SELECTOR, '.tab-content__ti__downloads__download')
         pdf_link = pdf_div.find_element(By.TAG_NAME, 'a').get_attribute('href')
-        s3_spec_sheet_url = upload_image_stream_to_s3(absolute_image_url, s3_bucket_name, f"rochester/{clean_product_name}/spec_sheet.pdf", 'application/pdf')
+        s3_spec_sheet_url = upload_image_stream_to_s3(pdf_link, s3_bucket_name, f"belgard/{clean_product_name}/spec_sheet.pdf", 'application/pdf')
         product_details['spec_sheet'] = s3_spec_sheet_url
     except:
         product_details['spec_sheet'] = None
@@ -247,6 +254,7 @@ def scrape_catalog(catalog_url=BASE_URL):
         product_links.extend(group)
 
 
+
     # Start at the catalog URL
     # driver.get(catalog_url)
 
@@ -257,12 +265,12 @@ def scrape_catalog(catalog_url=BASE_URL):
 
 
     all_products = []
-    # product_details = get_product_details(product_links[0])
-    # insert_product(product_details, 'Techo Bloc')
+
     for link in product_links:
         product_details = get_product_details(link)
         # all_products.append(product_details)
         insert_product(product_details, 'Belgard')
+
 
 
     return all_products

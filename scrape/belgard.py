@@ -136,24 +136,29 @@ def get_product_details(product_url):
 
         for color in colors:
             name = color.find_element(By.CSS_SELECTOR, '.details__color__title').text.strip()
+            print(name)
             clean_color_name = name.replace(' ', '-')
             thumbnail_image_url = color.find_element(By.TAG_NAME, 'img').get_attribute('src')
             s3_img_url = upload_image_stream_to_s3(thumbnail_image_url, s3_bucket_name, f"belgard/{clean_product_name}/colors/{clean_color_name}_.jpg")
-            driver.execute_script("arguments[0].click();", color)
+            image_click = color.find_element(By.CSS_SELECTOR, '.select-item__label')
+            driver.execute_script("arguments[0].click();", image_click)
+            time.sleep(1)
             gallery = product_wrapper.find_element(By.CSS_SELECTOR, '.gallery')
-            image_div = gallery.find_element(By.CSS_SELECTOR, '.gallery__mainimage.zoom')
+            image_div = gallery.find_element(By.CSS_SELECTOR, '.gallery__mainimage.zoom.color-active')
             main_image_url = image_div.find_element(By.TAG_NAME, 'img').get_attribute('src')
+            # main_image_url = image_div.find_element(By.TAG_NAME, 'img').get_attribute('src')
             color_main_image_url = upload_image_stream_to_s3(main_image_url, s3_bucket_name, f"belgard/{clean_product_name}/images/{clean_color_name}_main.jpg")
 
             color_entry ={
                 'name': name,
                 'thumbnail_image_url':s3_img_url,
+                'accent_color': True if 'ACCENT' in name else False,
                 'main_images':[color_main_image_url]
             }
             colors_list.append(color_entry)
 
 
-            product_details['colors'] = colors_list
+        product_details['colors'] = colors_list
     except:
         product_details['colors'] = []
 
@@ -171,12 +176,12 @@ def get_product_details(product_url):
             clean_size_name = name.replace(' ', '-')
             img_div = size.find_element(By.CSS_SELECTOR, '.tab-content__specs__details__image')
             img_url = img_div.find_element(By.TAG_NAME, 'img').get_attribute('src')
-            s3_img_url = upload_image_stream_to_s3(thumbnail_image_url, s3_bucket_name, f"belgard/{clean_product_name}/sizes/{clean_size_name}_.jpg")
+            s3_img_size_url = upload_image_stream_to_s3(img_url, s3_bucket_name, f"belgard/{clean_product_name}/sizes/{clean_size_name}_.jpg")
             size = [size.find_element(By.CSS_SELECTOR, '.tab-content__specs__details__subtitle').text.strip()]
 
             size_entry = {
                 'name': name,
-                'image': s3_img_url,
+                'image': s3_img_size_url,
                 'dimensions': size
 
             }
@@ -200,6 +205,7 @@ def get_product_details(product_url):
 
     for i, thumbnail in enumerate(thumbnails):
         driver.execute_script("arguments[0].click();", thumbnail)
+        time.sleep(1)
         image_div = gallery.find_element(By.CSS_SELECTOR, '.gallery__mainimage.zoom')
         image_url = image_div.find_element(By.TAG_NAME, 'img').get_attribute('src')
         s3_image_url = upload_image_stream_to_s3(image_url, s3_bucket_name, f"belgard/{clean_product_name}/images/main_{i}.jpg")
